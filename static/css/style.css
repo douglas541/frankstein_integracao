@@ -264,3 +264,51 @@ a:hover {
     margin-bottom: 10px;
     text-align: left;
 }
+
+/* Estilos para o cabeçalho do dashboard */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between; /* Localização à esquerda e clima à direita */
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #f0f0f0; /* Fundo cinza claro */
+    border-bottom: 1px solid #ccc; /* Linha separadora */
+    margin-bottom: 20px;
+}
+
+.dashboard-header .location-info, 
+.dashboard-header .weather-info {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espaço entre ícone e texto */
+    font-size: 16px;
+    color: #333;
+}
+
+.dashboard-header .location-info i,
+.dashboard-header .weather-info i {
+    font-size: 20px;
+    color: #4caf50; /* Verde do ícone */
+}
+
+.dashboard-header .weather-info {
+    justify-content: flex-end;
+    gap: 15px; /* Espaço extra entre ícones de temperatura e condição */
+}
+
+/* Ícones personalizados para as condições de clima */
+.weather-info .fa-cloud, 
+.weather-info .fa-thermometer-half {
+    color: #4caf50; /* Verde para combinar com o tema */
+}
+
+.error-message {
+    color: red;
+    font-size: 14px;
+}
+
+/* Estilos do conteúdo principal */
+.main-content {
+    padding: 20px;
+    margin-left: 200px;
+}

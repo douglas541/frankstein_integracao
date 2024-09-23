@@ -1,9 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+import requests
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+
+# Carregar as variáveis do arquivo .env
+load_dotenv()
+
+# Obter a chave da API de clima a partir do .env
+CLIMA_API_KEY = os.getenv('clima_api_key')
 
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
@@ -34,6 +43,8 @@ def init_db():
                         numero_funcionarios INTEGER,
                         historico_pesticidas TEXT,
                         observacoes TEXT,
+                        estado TEXT,  -- Adicionando o campo estado
+                        cidade TEXT,  -- Adicionando o campo cidade
                         machine1 INTEGER DEFAULT 0,
                         machine2 INTEGER DEFAULT 0,
                         machine3 INTEGER DEFAULT 0,
@@ -50,6 +61,7 @@ def init_db():
         conn.commit()
 
 
+
 # Rotas existentes (login, registro, dashboard) permanecem as mesmas
 
 @app.route('/dados_pessoais', methods=['GET', 'POST'])
@@ -60,7 +72,7 @@ def dados_pessoais():
     user_id = session['user_id']
 
     if request.method == 'POST':
-        # Obter os dados do formulário
+        # Obter os dados do formulário, incluindo estado e cidade
         full_name = request.form['full_name']
         email = request.form['email']
         telefone = request.form['telefone']
@@ -71,6 +83,8 @@ def dados_pessoais():
         numero_funcionarios = request.form['numero_funcionarios']
         historico_pesticidas = request.form['historico_pesticidas']
         observacoes = request.form['observacoes']
+        estado = request.form['estado']  # Novo campo
+        cidade = request.form['cidade']  # Novo campo
 
         # Atualizar os dados no banco de dados
         with connect_db() as conn:
@@ -78,11 +92,11 @@ def dados_pessoais():
                 UPDATE users
                 SET full_name = ?, email = ?, telefone = ?, endereco = ?, tamanho_fazenda = ?,
                     tipo_cultivo = ?, sistema_irrigacao = ?, numero_funcionarios = ?,
-                    historico_pesticidas = ?, observacoes = ?
+                    historico_pesticidas = ?, observacoes = ?, estado = ?, cidade = ?
                 WHERE id = ?
             ''', (full_name, email, telefone, endereco, tamanho_fazenda,
                   tipo_cultivo, sistema_irrigacao, numero_funcionarios,
-                  historico_pesticidas, observacoes, user_id))
+                  historico_pesticidas, observacoes, estado, cidade, user_id))
             conn.commit()
 
         return redirect(url_for('dashboard'))
@@ -92,7 +106,7 @@ def dados_pessoais():
         user = conn.execute('''
             SELECT full_name, email, telefone, endereco, tamanho_fazenda,
                    tipo_cultivo, sistema_irrigacao, numero_funcionarios,
-                   historico_pesticidas, observacoes
+                   historico_pesticidas, observacoes, estado, cidade
             FROM users
             WHERE id = ?
         ''', (user_id,)).fetchone()
@@ -107,7 +121,9 @@ def dados_pessoais():
                            sistema_irrigacao=user[6],
                            numero_funcionarios=user[7],
                            historico_pesticidas=user[8],
-                           observacoes=user[9])
+                           observacoes=user[9],
+                           estado=user[10],
+                           cidade=user[11])
 
 
 @app.route('/maquinas', methods=['GET', 'POST'])
@@ -196,7 +212,28 @@ def pessoas_auxiliares():
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('dashboard.html', username=session['username'])
+
+    user_id = session['user_id']
+
+    # Buscar os dados de localização do usuário (cidade e estado)
+    with connect_db() as conn:
+        user = conn.execute('SELECT cidade, estado FROM users WHERE id = ?', (user_id,)).fetchone()
+
+    cidade = user[0]
+    estado = user[1]
+
+    # Obter a latitude e longitude da cidade
+    lat, lon = get_lat_lon(cidade, estado)
+
+    # Obter as informações do clima para a cidade com base na latitude e longitude
+    weather = None
+    if lat and lon:
+        weather = get_weather(lat, lon)
+
+    return render_template('dashboard.html', username=session['username'], cidade=cidade, estado=estado, weather=weather)
+
+
+
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -306,6 +343,33 @@ def logout():
     session.pop('user_id', None)
     session.pop('username', None)
     return redirect(url_for('login'))
+
+
+def get_lat_lon(city, state, api_key=CLIMA_API_KEY):
+    url = f'http://api.openweathermap.org/geo/1.0/direct?q={city},{state},BR&limit=1&appid={api_key}'
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            return data[0]['lat'], data[0]['lon']  # Retorna latitude e longitude
+    return None, None
+
+
+def get_weather(lat, lon, api_key=CLIMA_API_KEY):
+    
+    url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&lang=pt&units=metric'
+    response = requests.get(url)
+    #print(response.json())
+    if response.status_code == 200:
+        data = response.json()
+        weather = {
+            'temperature': data['main']['temp'],
+            'description': data['weather'][0]['description'],
+            'city': data['timezone']  # Usamos o timezone como cidade aqui
+        }
+        return weather
+    return None
+
 
 if __name__ == '__main__':
     init_db()
