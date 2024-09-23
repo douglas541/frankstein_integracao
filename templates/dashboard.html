@@ -2,7 +2,38 @@
 
 {% block title %}Dashboard{% endblock %}
 
+{% block extra_head %}
+<!-- Adicionar FontAwesome para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
 {% block content %}
-<h2>Bem-vindo, {{ username }}!</h2>
-<p>Esta é a sua página principal após o login.</p>
+<div class="dashboard-header">
+    <!-- Localização no canto esquerdo -->
+    <div class="location-info">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>{{ cidade }}, {{ estado }}</span>
+    </div>
+
+    <!-- Clima no canto direito -->
+    {% if weather %}
+    <div class="weather-info">
+        <i class="fas fa-thermometer-half"></i>
+        <span>{{ weather.temperature }} °C</span>
+        <i class="fas fa-cloud"></i>
+        <span>{{ weather.description }}</span>
+    </div>
+    {% else %}
+    <div class="weather-info">
+        <p class="error-message">Clima indisponível</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="main-content">
+    <h2>Bem-vindo, {{ username }}!</h2>
+    <p>Esta é a sua página principal após o login.</p>
+
+    <!-- Conteúdo do dashboard pode continuar aqui -->
+</div>
 {% endblock %}
