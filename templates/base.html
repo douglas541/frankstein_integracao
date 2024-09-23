@@ -2,34 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Meu Site{% endblock %}</title>
+
+    <!-- Link to external CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Adicionar ícones do FontAwesome para um design mais clean -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     {% if session.get('user_id') %}
+    <!-- Global Navigation Menu -->
     <div class="global-nav">
         <nav>
             <ul>
-                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ url_for('dados_pessoais') }}">Dados Pessoais</a></li>
-                <li><a href="{{ url_for('maquinas') }}">Máquinas</a></li>
-                <li><a href="{{ url_for('pessoas_auxiliares') }}">Pessoas Auxiliares</a></li>
-                <li><a href="{{ url_for('settings') }}">Configurações</a></li>
-                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('dados_pessoais') }}"><i class="fas fa-user"></i> Dados Pessoais</a></li>
+                <li><a href="{{ url_for('maquinas') }}"><i class="fas fa-cogs"></i> Máquinas</a></li>
+                <li><a href="{{ url_for('pessoas_auxiliares') }}"><i class="fas fa-users"></i> Pessoas Auxiliares</a></li>
+                <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Configurações</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
     </div>
     {% endif %}
 
-
-    <!-- Área de Conteúdo Principal -->
+    <!-- Main Content Area -->
     <div class="main-content">
         {% block content %}
         <!-- O conteúdo específico da página será inserido aqui -->
         {% endblock %}
     </div>
 
+    <!-- Optional Scripts -->
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -34,6 +34,24 @@
     <h2>Bem-vindo, {{ username }}!</h2>
     <p>Esta é a sua página principal após o login.</p>
 
+        <!-- Seção de Notícias -->
+        <h3>Notícias Agro da Região</h3>
+        <div class="news-section">
+            {% if noticias %}
+                <ul class="news-list">
+                    {% for noticia in noticias %}
+                        <li class="news-item">
+                            <a href="{{ noticia.url }}" target="_blank">
+                                <h4>{{ noticia.title }}</h4>
+                                <p>{{ noticia.description }}</p>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Não há notícias disponíveis no momento.</p>
+            {% endif %}
+        </div>
     <!-- Conteúdo do dashboard pode continuar aqui -->
 </div>
 {% endblock %}

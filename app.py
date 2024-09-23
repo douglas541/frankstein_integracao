@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import requests
 import os
+from flask_caching import Cache
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -13,13 +14,12 @@ load_dotenv()
 
 # Obter a chave da API de clima a partir do .env
 CLIMA_API_KEY = os.getenv('clima_api_key')
+NOTICIAS_API_KEY = os.getenv('noticias_api_key')
 
-from flask import Flask, render_template, request, redirect, url_for, session
-import sqlite3
-from werkzeug.security import generate_password_hash, check_password_hash
-
-app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+# Configurar o cache
+app.config['CACHE_TYPE'] = 'SimpleCache'  # Usar SimpleCache (armazenado na memória)
+app.config['CACHE_DEFAULT_TIMEOUT'] = 6*3600  # O cache expira em 300 segundos (5 minutos)
+cache = Cache(app)
 
 # Conectando ao banco de dados
 def connect_db():
@@ -111,6 +111,14 @@ def dados_pessoais():
             WHERE id = ?
         ''', (user_id,)).fetchone()
 
+    # Carregar todos os estados
+    estados = requests.get('https://servicodados.ibge.gov.br/api/v1/localidades/estados').json()
+
+    # Carregar as cidades se o estado já estiver selecionado
+    cidades = None
+    if user[10]:  # Se o estado estiver selecionado
+        cidades = requests.get(f'https://servicodados.ibge.gov.br/api/v1/localidades/estados/{user[10]}/municipios').json()
+
     return render_template('cadastro/dados_pessoais.html',
                            full_name=user[0],
                            email=user[1],
@@ -122,8 +130,10 @@ def dados_pessoais():
                            numero_funcionarios=user[7],
                            historico_pesticidas=user[8],
                            observacoes=user[9],
-                           estado=user[10],
-                           cidade=user[11])
+                           estado_selecionado=user[10],
+                           cidade_selecionada=user[11],
+                           estados=estados,
+                           cidades=cidades)
 
 
 @app.route('/maquinas', methods=['GET', 'POST'])
@@ -230,7 +240,9 @@ def dashboard():
     if lat and lon:
         weather = get_weather(lat, lon)
 
-    return render_template('dashboard.html', username=session['username'], cidade=cidade, estado=estado, weather=weather)
+    noticias = get_news(cidade, estado)
+
+    return render_template('dashboard.html', username=session['username'], cidade=cidade, estado=estado, weather=weather, noticias=noticias)
 
 
 
@@ -345,6 +357,7 @@ def logout():
     return redirect(url_for('login'))
 
 
+@cache.cached(timeout=6*3600, key_prefix="lat_lon_{city}_{state}")
 def get_lat_lon(city, state, api_key=CLIMA_API_KEY):
     url = f'http://api.openweathermap.org/geo/1.0/direct?q={city},{state},BR&limit=1&appid={api_key}'
     response = requests.get(url)
@@ -354,22 +367,30 @@ def get_lat_lon(city, state, api_key=CLIMA_API_KEY):
             return data[0]['lat'], data[0]['lon']  # Retorna latitude e longitude
     return None, None
 
-
+# Função que obtém as informações de clima com caching
+@cache.cached(timeout=6*3600, key_prefix="weather_{lat}_{lon}")
 def get_weather(lat, lon, api_key=CLIMA_API_KEY):
-    
     url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&lang=pt&units=metric'
     response = requests.get(url)
-    #print(response.json())
     if response.status_code == 200:
         data = response.json()
         weather = {
             'temperature': data['main']['temp'],
             'description': data['weather'][0]['description'],
-            'city': data['timezone']  # Usamos o timezone como cidade aqui
+            'city': data['timezone']
         }
         return weather
     return None
 
+def get_news(city, state, api_key=NOTICIAS_API_KEY):
+    url = f'https://newsapi.org/v2/top-headlines?country=br&apiKey={api_key}'
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        data = response.json()
+        print(data)
+        return data['articles'][:5]  # Retorna as 5 primeiras notícias
+    return None
 
 if __name__ == '__main__':
     init_db()
