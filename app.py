@@ -43,12 +43,16 @@ def init_db():
                         numero_funcionarios INTEGER,
                         historico_pesticidas TEXT,
                         observacoes TEXT,
-                        estado TEXT,  -- Adicionando o campo estado
-                        cidade TEXT,  -- Adicionando o campo cidade
-                        machine1 INTEGER DEFAULT 0,
-                        machine2 INTEGER DEFAULT 0,
-                        machine3 INTEGER DEFAULT 0,
-                        machine4 INTEGER DEFAULT 0)''')
+                        estado TEXT,  -- Campo representando o estado
+                        cidade TEXT,  -- Campo representando a cidade
+                        machine_r_series INTEGER DEFAULT 0,  -- 8260R, 8285R, 8310R, 8335R, 8360R
+                        machine_j_series_7200 INTEGER DEFAULT 0,  -- 7200J, 7215J, 7230J
+                        machine_m_series INTEGER DEFAULT 0,  -- 6155M, 6175M, 6195M
+                        machine_j_series_6135 INTEGER DEFAULT 0,  -- 6135J, 6150J, 6170J, 6190J, 6210J
+                        machine_j_series_6110 INTEGER DEFAULT 0,  -- 6110J, 6125J, 6130J
+                        machine_m_series_4040 INTEGER DEFAULT 0,  -- M4040, M4030
+                        machine_series_4730_4830 INTEGER DEFAULT 0  -- 4730, 4830
+                        )''')
         
         # Tabela de pessoas auxiliares
         conn.execute('''CREATE TABLE IF NOT EXISTS auxiliary_people (
@@ -142,26 +146,48 @@ def maquinas():
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    if request.method == 'POST':
-        machine1 = int(request.form['machine1'])
-        machine2 = int(request.form['machine2'])
-        machine3 = int(request.form['machine3'])
-        machine4 = int(request.form['machine4'])
 
+    if request.method == 'POST':
+        # Obtenha os valores do formulário
+        machine_r_series = int(request.form['machine_r_series'])
+        machine_j_series_7200 = int(request.form['machine_j_series_7200'])
+        machine_m_series = int(request.form['machine_m_series'])
+        machine_j_series_6135 = int(request.form['machine_j_series_6135'])
+        machine_j_series_6110 = int(request.form['machine_j_series_6110'])
+        machine_m_series_4040 = int(request.form['machine_m_series_4040'])
+        machine_series_4730_4830 = int(request.form['machine_series_4730_4830'])
+
+        # Atualize os dados no banco de dados
         with connect_db() as conn:
             conn.execute('''
                 UPDATE users
-                SET machine1 = ?, machine2 = ?, machine3 = ?, machine4 = ?
+                SET machine_r_series = ?, machine_j_series_7200 = ?, machine_m_series = ?, machine_j_series_6135 = ?, machine_j_series_6110 = ?,
+                    machine_m_series_4040 = ?, machine_series_4730_4830 = ?
                 WHERE id = ?
-            ''', (machine1, machine2, machine3, machine4, user_id))
+            ''', (machine_r_series, machine_j_series_7200, machine_m_series, machine_j_series_6135, machine_j_series_6110,
+                  machine_m_series_4040, machine_series_4730_4830, user_id))
             conn.commit()
 
         return redirect(url_for('dashboard'))
 
+    # Se for GET, busque os valores atuais do banco
     with connect_db() as conn:
-        user = conn.execute('SELECT machine1, machine2, machine3, machine4 FROM users WHERE id = ?', (user_id,)).fetchone()
+        user = conn.execute('''
+            SELECT machine_r_series, machine_j_series_7200, machine_m_series, machine_j_series_6135, machine_j_series_6110,
+                   machine_m_series_4040, machine_series_4730_4830
+            FROM users
+            WHERE id = ?
+        ''', (user_id,)).fetchone()
 
-    return render_template('cadastro/maquinas.html', machine1=user[0], machine2=user[1], machine3=user[2], machine4=user[3])
+    # Passe os valores atuais para o template
+    return render_template('cadastro/maquinas.html',
+                           machine_r_series=user[0],
+                           machine_j_series_7200=user[1],
+                           machine_m_series=user[2],
+                           machine_j_series_6135=user[3],
+                           machine_j_series_6110=user[4],
+                           machine_m_series_4040=user[5],
+                           machine_series_4730_4830=user[6])
 
 def get_auxiliaries(user_id):
     with connect_db() as conn:
