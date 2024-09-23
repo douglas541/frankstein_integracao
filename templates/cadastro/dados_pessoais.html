@@ -34,6 +34,9 @@
         <label for="estado">Estado</label>
         <select id="estado" name="estado" required>
             <option value="">Selecione um estado</option>
+            {% for estado in estados %}
+                <option value="{{ estado.sigla }}" {% if estado.sigla == estado_selecionado %}selected{% endif %}>{{ estado.nome }}</option>
+            {% endfor %}
         </select>
     </div>
 
@@ -42,6 +45,11 @@
         <label for="cidade">Cidade</label>
         <select id="cidade" name="cidade" required>
             <option value="">Selecione uma cidade</option>
+            {% if cidades %}
+                {% for cidade in cidades %}
+                    <option value="{{ cidade.nome }}" {% if cidade.nome == cidade_selecionada %}selected{% endif %}>{{ cidade.nome }}</option>
+                {% endfor %}
+            {% endif %}
         </select>
     </div>
 
