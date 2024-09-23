@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Pessoas Auxiliares{% endblock %}
+
+{% block extra_head %}
+<script>
+    function addAuxiliaryPerson() {
+        let container = document.getElementById('auxiliary-people-container');
+        let index = container.children.length;
+
+        let divBlock = document.createElement('div');
+        divBlock.className = 'auxiliary-person-block';
+
+        let div = document.createElement('div');
+        div.className = 'auxiliary-person';
+
+        div.innerHTML = `
+            <input type="text" name="auxiliary_name_${index}" placeholder="Nome da Pessoa" required>
+            <input type="email" name="auxiliary_email_${index}" placeholder="Email da Pessoa" required>
+            <input type="tel" name="auxiliary_celular_${index}" placeholder="Celular da Pessoa" pattern="\\d{10,11}" required>
+            <button type="button" onclick="removeAuxiliaryPerson(this)">Remover</button>
+        `;
+
+        divBlock.appendChild(div);
+        container.appendChild(divBlock);
+    }
+
+    function removeAuxiliaryPerson(button) {
+        let divBlock = button.closest('.auxiliary-person-block');
+        divBlock.remove();
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<h2>Pessoas Auxiliares</h2>
+{% if success_message %}
+    <p class="success-message">{{ success_message }}</p>
+{% endif %}
+{% if error_message %}
+    <p class="error-message">{{ error_message }}</p>
+{% endif %}
+<form action="/pessoas_auxiliares" method="POST">
+    <div id="auxiliary-people-container">
+        {% for person in auxiliaries %}
+            <div class="auxiliary-person-block">
+                <div class="auxiliary-person">
+                    <input type="text" name="auxiliary_name_{{ loop.index0 }}" placeholder="Nome da Pessoa" value="{{ person[0] }}" required>
+                    <input type="email" name="auxiliary_email_{{ loop.index0 }}" placeholder="Email da Pessoa" value="{{ person[1] }}" required>
+                    <input type="tel" name="auxiliary_celular_{{ loop.index0 }}" placeholder="Celular da Pessoa" value="{{ person[2] }}" pattern="\d{10,11}" required>
+                    <button type="button" onclick="removeAuxiliaryPerson(this)">Remover</button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <button type="button" onclick="addAuxiliaryPerson()">Adicionar Pessoa Auxiliar</button>
+    <button type="submit" class="button-save">Salvar</button>
+</form>
+{% endblock %}

@@ -1,0 +1,266 @@
+/* Reset e estilos base */
+body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    background-color: #f4f7f6;
+}
+
+/* Menu de Navegação Global */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200px;
+    height: 100vh;
+    background-color: #f0f0f0; /* Fundo cinza */
+    padding: 20px 0;
+    box-sizing: border-box;
+    border-right: 1px solid #ccc; /* Borda direita */
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar nav ul li {
+    margin: 0;
+}
+
+.sidebar nav ul li a {
+    display: block;
+    color: #333;
+    padding: 15px 20px;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.sidebar nav ul li a:hover {
+    background-color: #ddd;
+}
+
+/* Área de Conteúdo Principal */
+.main-content {
+    margin-left: 200px; /* Ajustado para corresponder à largura do menu */
+    padding: 20px;
+}
+
+/* Títulos */
+h2 {
+    color: #2d572c;
+    margin-bottom: 20px;
+}
+
+h3 {
+    color: #2d572c;
+    margin-bottom: 10px;
+}
+
+/* Campos de Entrada */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="tel"],
+textarea {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border: 1px solid #dcdcdc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+textarea:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #999;
+}
+
+/* Botões */
+button {
+    background-color: #4caf50;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Botões de Salvar */
+.button-save {
+    display: block;
+    width: auto;
+    margin-top: 20px;
+    margin-left: auto; /* Alinha o botão à direita */
+    padding: 10px 20px;
+}
+
+/* Grupos de Formulário */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Ações do Formulário */
+.form-actions {
+    text-align: right;
+}
+
+/* Seção de Máquinas */
+.machines-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.machine-block {
+    border: 1px solid #ccc; /* Borda ao redor do bloco */
+    padding: 20px;
+    border-radius: 5px;
+    background-color: #f9f9f9; /* Fundo levemente diferente */
+}
+
+.machine {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.machine img {
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: transform 0.2s;
+}
+
+.machine img:hover {
+    transform: scale(1.05);
+}
+
+.machine label {
+    font-size: 18px;
+    font-weight: bold;
+    flex-grow: 1;
+}
+
+.machine-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.machine-controls button {
+    background-color: #f44336; /* Cor de remoção (vermelho) */
+    padding: 5px 10px;
+    font-size: 14px;
+    border-radius: 5px;
+}
+
+.machine-controls button:hover {
+    background-color: #d32f2f;
+}
+
+.machine-controls input {
+    width: 50px;
+    text-align: center;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+/* Seção de Pessoas Auxiliares */
+.auxiliary-person-block {
+    border: 1px solid #ccc; /* Borda ao redor do bloco */
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9; /* Fundo levemente diferente */
+    position: relative; /* Para posicionar o botão */
+}
+
+.auxiliary-person {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centraliza os elementos horizontalmente */
+}
+
+.auxiliary-person input {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    margin: 5px 0;
+    box-sizing: border-box;
+}
+
+.auxiliary-person button {
+    background-color: #f44336; /* Vermelho */
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+    align-self: center; /* Centraliza o botão horizontalmente */
+}
+
+.auxiliary-person button:hover {
+    background-color: #d32f2f;
+}
+
+/* Links */
+a {
+    color: #4caf50;
+    text-decoration: none;
+    margin-top: 15px;
+    display: inline-block;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Mensagens de Sucesso e Erro */
+.success-message {
+    color: green;
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-align: left;
+}

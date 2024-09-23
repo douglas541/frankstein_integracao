@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Meu Site{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% if session.get('user_id') %}
+    <div class="global-nav">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('dados_pessoais') }}">Dados Pessoais</a></li>
+                <li><a href="{{ url_for('maquinas') }}">Máquinas</a></li>
+                <li><a href="{{ url_for('pessoas_auxiliares') }}">Pessoas Auxiliares</a></li>
+                <li><a href="{{ url_for('settings') }}">Configurações</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+
+    <!-- Área de Conteúdo Principal -->
+    <div class="main-content">
+        {% block content %}
+        <!-- O conteúdo específico da página será inserido aqui -->
+        {% endblock %}
+    </div>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

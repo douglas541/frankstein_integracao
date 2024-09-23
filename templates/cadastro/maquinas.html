@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Máquinas{% endblock %}
+
+{% block extra_head %}
+<script>
+    function incrementMachine(machineId) {
+        let counter = document.getElementById(machineId);
+        counter.value = parseInt(counter.value) + 1;
+    }
+
+    function decrementMachine(machineId) {
+        let counter = document.getElementById(machineId);
+        if (parseInt(counter.value) > 0) {
+            counter.value = parseInt(counter.value) - 1;
+        }
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<h2>Máquinas</h2>
+<form action="/maquinas" method="POST" class="maquinas-form">
+    <div class="machines-container">
+        <!-- Máquina 1 -->
+        <div class="machine-block">
+            <h3>Máquina 1</h3>
+            <div class="machine">
+                <img src="{{ url_for('static', filename='images/machine1.jpeg') }}" alt="Máquina 1" onclick="incrementMachine('machine1')">
+                <label for="machine1">Máquina 1</label>
+                <div class="machine-controls">
+                    <button type="button" onclick="decrementMachine('machine1')">Decrementar</button>
+                    <input type="text" id="machine1" name="machine1" value="{{ machine1 or 0 }}" readonly>
+                </div>
+            </div>
+        </div>
+        <!-- Máquina 2 -->
+        <div class="machine-block">
+            <h3>Máquina 2</h3>
+            <div class="machine">
+                <img src="{{ url_for('static', filename='images/machine2.avif') }}" alt="Máquina 2" onclick="incrementMachine('machine2')">
+                <label for="machine2">Máquina 2</label>
+                <div class="machine-controls">
+                    <button type="button" onclick="decrementMachine('machine2')">Decrementar</button>
+                    <input type="text" id="machine2" name="machine2" value="{{ machine2 or 0 }}" readonly>
+                </div>
+            </div>
+        </div>
+        <!-- Máquina 3 -->
+        <div class="machine-block">
+            <h3>Máquina 3</h3>
+            <div class="machine">
+                <img src="{{ url_for('static', filename='images/machine3.avif') }}" alt="Máquina 3" onclick="incrementMachine('machine3')">
+                <label for="machine3">Máquina 3</label>
+                <div class="machine-controls">
+                    <button type="button" onclick="decrementMachine('machine3')">Decrementar</button>
+                    <input type="text" id="machine3" name="machine3" value="{{ machine3 or 0 }}" readonly>
+                </div>
+            </div>
+        </div>
+        <!-- Máquina 4 -->
+        <div class="machine-block">
+            <h3>Máquina 4</h3>
+            <div class="machine">
+                <img src="{{ url_for('static', filename='images/machine4.avif') }}" alt="Máquina 4" onclick="incrementMachine('machine4')">
+                <label for="machine4">Máquina 4</label>
+                <div class="machine-controls">
+                    <button type="button" onclick="decrementMachine('machine4')">Decrementar</button>
+                    <input type="text" id="machine4" name="machine4" value="{{ machine4 or 0 }}" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="button-save">Salvar</button>
+    </div>
+</form>
+{% endblock %}

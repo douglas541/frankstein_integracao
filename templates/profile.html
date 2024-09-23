@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Completar Perfil{% endblock %}
+
+{% block extra_head %}
+<!-- Incluir CSS ou JS adicionais aqui -->
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h2>Complete seu perfil</h2>
+
+    <div class="form-container">
+        <!-- Formulário começa aqui -->
+        <form action="/profile" method="POST" class="profile-form">
+            <!-- Incluir as abas internas -->
+            {% include 'partials/_tabs.html' %}
+            <!-- Botão de salvar -->
+            <button type="submit">Salvar Perfil</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Incluir scripts adicionais -->
+<script>
+    // Suas funções JavaScript (ex: openTab, incrementMachine)
+</script>
+{% endblock %}

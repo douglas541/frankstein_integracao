@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-box">
+        <h2>Registrar</h2>
+
+        <!-- Exibir mensagem de erro, se houver -->
+        {% if error_message %}
+            <p class="error-message">{{ error_message }}</p>
+        {% endif %}
+
+        <form action="/register" method="POST">
+            <input type="text" name="username" placeholder="Usuário" required>
+            <input type="password" name="password" placeholder="Senha" required>
+            <button type="submit">Registrar</button>
+        </form>
+        <a href="{{ url_for('login') }}">Já tem uma conta? Faça login</a>
+    </div>
+</div>
+{% endblock %}

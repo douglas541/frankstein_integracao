@@ -1,0 +1,67 @@
+<!-- Navegação das Abas Internas -->
+<div class="tab-internal">
+    <button class="tablinks active" onclick="openTab(event, 'dados_pessoais')">Dados Pessoais</button>
+    <button class="tablinks" onclick="openTab(event, 'maquinas')">Máquinas</button>
+    <button class="tablinks" onclick="openTab(event, 'pessoas_auxiliares')">Pessoas Auxiliares</button>
+</div>
+
+<!-- Conteúdo das Abas -->
+<div class="tab-content-container">
+    <!-- Dados Pessoais -->
+    <div id="dados_pessoais" class="tabcontent" style="display: block;">
+        <input type="text" name="full_name" placeholder="Nome Completo" value="{{ full_name or '' }}" required>
+        <input type="email" name="email" placeholder="Email" value="{{ email or '' }}" required>
+    </div>
+
+    <!-- Máquinas -->
+    <div id="maquinas" class="tabcontent">
+        <h3>Quantas máquinas você possui?</h3>
+        <div class="machines">
+            <!-- Máquina 1 -->
+            <div class="machine">
+                <img src="{{ url_for('static', filename='images/machine1.jpeg') }}" alt="Máquina 1" onclick="incrementMachine('machine1')">
+                <label>Máquina 1</label>
+                <button type="button" onclick="decrementMachine('machine1')">Decrementar</button>
+                <input type="text" id="machine1" name="machine1" value="{{ machine1 or 0 }}" readonly>
+            </div>
+            <!-- Repita para as outras máquinas -->
+            <!-- Máquina 2 -->
+            <div class="machine">
+                <img src="{{ url_for('static', filename='images/machine2.avif') }}" alt="Máquina 2" onclick="incrementMachine('machine2')">
+                <label>Máquina 2</label>
+                <button type="button" onclick="decrementMachine('machine2')">Decrementar</button>
+                <input type="text" id="machine2" name="machine2" value="{{ machine2 or 0 }}" readonly>
+            </div>
+            <!-- Máquina 3 -->
+            <div class="machine">
+                <img src="{{ url_for('static', filename='images/machine3.avif') }}" alt="Máquina 3" onclick="incrementMachine('machine3')">
+                <label>Máquina 3</label>
+                <button type="button" onclick="decrementMachine('machine3')">Decrementar</button>
+                <input type="text" id="machine3" name="machine3" value="{{ machine3 or 0 }}" readonly>
+            </div>
+            <!-- Máquina 4 -->
+            <div class="machine">
+                <img src="{{ url_for('static', filename='images/machine4.avif') }}" alt="Máquina 4" onclick="incrementMachine('machine4')">
+                <label>Máquina 4</label>
+                <button type="button" onclick="decrementMachine('machine4')">Decrementar</button>
+                <input type="text" id="machine4" name="machine4" value="{{ machine4 or 0 }}" readonly>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pessoas Auxiliares -->
+    <div id="pessoas_auxiliares" class="tabcontent">
+        <h3>Pessoas Auxiliares</h3>
+        <div id="auxiliary-people-container">
+            <!-- Carregar pessoas auxiliares existentes -->
+            {% for person in auxiliaries %}
+                <div class="auxiliary-person">
+                    <input type="text" name="auxiliary_name_{{ loop.index0 }}" placeholder="Nome da Pessoa" value="{{ person[0] }}" required>
+                    <input type="email" name="auxiliary_email_{{ loop.index0 }}" placeholder="Email da Pessoa" value="{{ person[1] }}" required>
+                    <button type="button" onclick="removeAuxiliaryPerson(this)">Remover</button>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" onclick="addAuxiliaryPerson()">Adicionar Pessoa Auxiliar</button>
+    </div>
+</div>

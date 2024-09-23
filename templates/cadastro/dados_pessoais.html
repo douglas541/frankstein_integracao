@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Dados Pessoais{% endblock %}
+
+{% block content %}
+<h2>Dados Pessoais</h2>
+<form action="/dados_pessoais" method="POST" class="dados-pessoais-form">
+    <!-- Nome Completo -->
+    <div class="form-group">
+        <label for="full_name">Nome Completo</label>
+        <input type="text" id="full_name" name="full_name" placeholder="Nome Completo" value="{{ full_name or '' }}" required>
+    </div>
+
+    <!-- Email -->
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Email" value="{{ email or '' }}" required>
+    </div>
+
+    <!-- Telefone -->
+    <div class="form-group">
+        <label for="telefone">Telefone</label>
+        <input type="text" id="telefone" name="telefone" placeholder="Telefone" value="{{ telefone or '' }}" required>
+    </div>
+
+    <!-- Endereço -->
+    <div class="form-group">
+        <label for="endereco">Endereço</label>
+        <input type="text" id="endereco" name="endereco" placeholder="Endereço" value="{{ endereco or '' }}" required>
+    </div>
+
+    <!-- Tamanho da Fazenda -->
+    <div class="form-group">
+        <label for="tamanho_fazenda">Tamanho da Fazenda (hectares)</label>
+        <input type="number" id="tamanho_fazenda" name="tamanho_fazenda" placeholder="Tamanho da Fazenda" value="{{ tamanho_fazenda or '' }}" min="0" step="0.1" required>
+    </div>
+
+    <!-- Tipo de Cultivo -->
+    <div class="form-group">
+        <label for="tipo_cultivo">Tipo de Cultivo</label>
+        <input type="text" id="tipo_cultivo" name="tipo_cultivo" placeholder="Tipo de Cultivo" value="{{ tipo_cultivo or '' }}" required>
+    </div>
+
+    <!-- Sistema de Irrigação -->
+    <div class="form-group">
+        <label for="sistema_irrigacao">Sistema de Irrigação</label>
+        <input type="text" id="sistema_irrigacao" name="sistema_irrigacao" placeholder="Sistema de Irrigação" value="{{ sistema_irrigacao or '' }}" required>
+    </div>
+
+    <!-- Número de Funcionários -->
+    <div class="form-group">
+        <label for="numero_funcionarios">Número de Funcionários</label>
+        <input type="number" id="numero_funcionarios" name="numero_funcionarios" placeholder="Número de Funcionários" value="{{ numero_funcionarios or '' }}" min="0" required>
+    </div>
+
+    <!-- Histórico de Uso de Pesticidas -->
+    <div class="form-group">
+        <label for="historico_pesticidas">Histórico de Uso de Pesticidas</label>
+        <textarea id="historico_pesticidas" name="historico_pesticidas" placeholder="Descreva o histórico de uso de pesticidas" rows="4">{{ historico_pesticidas or '' }}</textarea>
+    </div>
+
+    <!-- Observações Adicionais -->
+    <div class="form-group">
+        <label for="observacoes">Observações Adicionais</label>
+        <textarea id="observacoes" name="observacoes" placeholder="Observações Adicionais" rows="4">{{ observacoes or '' }}</textarea>
+    </div>
+
+    <!-- Botão Salvar -->
+    <div class="form-actions">
+        <button type="submit" class="button-save">Salvar</button>
+    </div>
+</form>
+{% endblock %}
