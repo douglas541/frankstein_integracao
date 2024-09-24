@@ -1,3 +1,13 @@
+html {
+    overflow-y: scroll;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 /* Reset e estilos base */
 body {
     margin: 0;
@@ -265,24 +275,25 @@ a:hover {
     text-align: left;
 }
 
-/* Estilos para o cabeçalho do dashboard */
 .dashboard-header {
     display: flex;
-    justify-content: space-between; /* Localização à esquerda e clima à direita */
+    justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
-    background-color: #f0f0f0; /* Fundo cinza claro */
-    border-bottom: 1px solid #ccc; /* Linha separadora */
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ccc;
     margin-bottom: 20px;
+    margin: 0;
+    padding: 10px 20px;
+    width: 100%;
 }
 
-.dashboard-header .location-info, 
+.dashboard-header .location-info,
 .dashboard-header .weather-info {
+    width: 50%;
     display: flex;
     align-items: center;
-    gap: 10px; /* Espaço entre ícone e texto */
-    font-size: 16px;
-    color: #333;
+    gap: 10px;
 }
 
 .dashboard-header .location-info i,
@@ -297,7 +308,7 @@ a:hover {
 }
 
 /* Ícones personalizados para as condições de clima */
-.weather-info .fa-cloud, 
+.weather-info .fa-cloud,
 .weather-info .fa-thermometer-half {
     color: #4caf50; /* Verde para combinar com o tema */
 }
@@ -436,6 +447,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin: 10px 0 0 0;
 }
 
 .global-nav nav ul li a:hover {
