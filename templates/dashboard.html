@@ -32,26 +32,37 @@
 
 <div class="main-content">
     <h2>Bem-vindo, {{ username }}!</h2>
-    <p>Esta é a sua página principal após o login.</p>
+    
+    <!-- Seção de Tarefas de Manutenção -->
+    {% if maintenance_tasks %}
+        <h3>Tarefas de Manutenção Preventiva para Hoje</h3>
+        <ul>
+            {% for task in maintenance_tasks %}
+                <li>{{ task }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Não há tarefas de manutenção para hoje.</p>
+    {% endif %}
 
-        <!-- Seção de Notícias -->
-        <h3>Notícias Agro da Região</h3>
-        <div class="news-section">
-            {% if noticias %}
-                <ul class="news-list">
-                    {% for noticia in noticias %}
-                        <li class="news-item">
-                            <a href="{{ noticia.url }}" target="_blank">
-                                <h4>{{ noticia.title }}</h4>
-                                <p>{{ noticia.description }}</p>
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>Não há notícias disponíveis no momento.</p>
-            {% endif %}
-        </div>
-    <!-- Conteúdo do dashboard pode continuar aqui -->
+    <!-- Seção de Notícias -->
+    <h3>Notícias Agro da Região</h3>
+    <div class="news-section">
+        {% if noticias %}
+            <ul class="news-list">
+                {% for noticia in noticias %}
+                    <li class="news-item">
+                        <a href="{{ noticia.url }}" target="_blank">
+                            <h4>{{ noticia.title }}</h4>
+                            <p>{{ noticia.description }}</p>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Não há notícias disponíveis no momento.</p>
+        {% endif %}
+    </div>
+    <!-- Conteúdo adicional do dashboard -->
 </div>
 {% endblock %}

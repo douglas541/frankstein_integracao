@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import requests
 import os
 from flask_caching import Cache
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -15,6 +16,23 @@ load_dotenv()
 # Obter a chave da API de clima a partir do .env
 CLIMA_API_KEY = os.getenv('clima_api_key')
 NOTICIAS_API_KEY = os.getenv('noticias_api_key')
+
+MODEL_PATH = os.getenv('model_path')
+VECTORDB_FOLDER = os.getenv('vectordb_path')
+DOCUMENTS_FOLDER = os.getenv('documents_path')
+SENTENCE_EMBEDDING_MODEL = os.getenv('sentence_embedding_model')
+TOGETHER_API_KEY = os.getenv('together_api_key')
+
+from utils.llm import ChatPDF
+
+llm = None
+
+def get_llm():
+    global llm
+    if llm is None:
+        llm = ChatPDF(DOCUMENTS_FOLDER, VECTORDB_FOLDER, MODEL_PATH, SENTENCE_EMBEDDING_MODEL, TOGETHER_API_KEY, temperature=0.3)
+        llm.start()
+    return llm
 
 # Configurar o cache
 app.config['CACHE_TYPE'] = 'SimpleCache'  # Usar SimpleCache (armazenado na memória)
@@ -63,8 +81,6 @@ def init_db():
                         celular TEXT NOT NULL,
                         FOREIGN KEY(user_id) REFERENCES users(id))''')
         conn.commit()
-
-
 
 # Rotas existentes (login, registro, dashboard) permanecem as mesmas
 
@@ -251,26 +267,57 @@ def dashboard():
 
     user_id = session['user_id']
 
-    # Buscar os dados de localização do usuário (cidade e estado)
+    # Buscar os dados de localização do usuário
     with connect_db() as conn:
         user = conn.execute('SELECT cidade, estado FROM users WHERE id = ?', (user_id,)).fetchone()
 
     cidade = user[0]
     estado = user[1]
 
-    # Obter a latitude e longitude da cidade
+    # Obter latitude e longitude
     lat, lon = get_lat_lon(cidade, estado)
 
-    # Obter as informações do clima para a cidade com base na latitude e longitude
+    # Obter informações do clima
     weather = None
     if lat and lon:
         weather = get_weather(lat, lon)
 
     noticias = get_news(cidade, estado)
 
-    return render_template('dashboard.html', username=session['username'], cidade=cidade, estado=estado, weather=weather, noticias=noticias)
+    # Obter data atual
+    today_date = datetime.now().date()
 
+    # Gerar tarefas de manutenção
+    if True:
+        prompt = f"""
+        Com base nas informações a seguir, gere uma lista de tarefas de manutenção preventiva que devem ser realizadas hoje:
 
+        - Condições climáticas: {weather['description']} com temperatura de -2°C
+
+        Analise o clima e utilize apenas as informações fornecidas nos documentos para sugerir as tarefas que podem ser de manutenção ou prevenção, sem inventar informações.
+        Seja o mais breve possível.
+
+        Lista de tarefas:
+        """
+        try:
+            llm = get_llm()
+            document_names = ['manualOperador_7200J_7215J_7230J.pdf']
+            llm.create_qa_session(document_names)
+            response = llm.qa.invoke(prompt)['result']
+            print(response)
+            maintenance_tasks = eval(response.strip())
+            if not isinstance(maintenance_tasks, list):
+                maintenance_tasks = ["Erro ao gerar lista de tarefas."]
+        except Exception as e:
+            maintenance_tasks = "Não foi possível gerar as tarefas de manutenção para hoje."
+            print(f"Erro ao gerar tarefas de manutenção: {e}")
+
+        session['maintenance_tasks'] = maintenance_tasks
+        session['maintenance_date'] = str(today_date)
+    else:
+        maintenance_tasks = session.get('maintenance_tasks')
+
+    return render_template('dashboard.html', username=session['username'], cidade=cidade, estado=estado, weather=weather, noticias=noticias, maintenance_tasks=maintenance_tasks)
 
 
 
@@ -420,4 +467,5 @@ def get_news(city, state, api_key=NOTICIAS_API_KEY):
 
 if __name__ == '__main__':
     init_db()
+    #initialize_llm()
     app.run(debug=True)
