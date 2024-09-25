@@ -1,5 +1,6 @@
 database.db
 venv
+.venv/
 .env
 __pycache__
 chroma.sqlite3

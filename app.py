@@ -1,11 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import requests
 import os
 from flask_caching import Cache
+
 from datetime import datetime
+
+from services import audio_service
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -71,7 +75,7 @@ def init_db():
                         machine_m_series_4040 INTEGER DEFAULT 0,  -- M4040, M4030
                         machine_series_4730_4830 INTEGER DEFAULT 0  -- 4730, 4830
                         )''')
-        
+
         # Tabela de pessoas auxiliares
         conn.execute('''CREATE TABLE IF NOT EXISTS auxiliary_people (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -416,7 +420,7 @@ def profile():
     return render_template('profile.html', full_name=user[0], email=user[1],
                            machine1=user[2], machine2=user[3], machine3=user[4], machine4=user[5],
                            auxiliaries=auxiliaries)
-    
+
 
 @app.route('/settings')
 def settings():
@@ -458,12 +462,25 @@ def get_weather(lat, lon, api_key=CLIMA_API_KEY):
 def get_news(city, state, api_key=NOTICIAS_API_KEY):
     url = f'https://newsapi.org/v2/top-headlines?country=br&apiKey={api_key}'
     response = requests.get(url)
-    
+
     if response.status_code == 200:
         data = response.json()
         print(data)
         return data['articles'][:5]  # Retorna as 5 primeiras notícias
     return None
+
+@app.route('/transformar_em_audio', methods=['POST'])
+def transformar_em_audio():
+    text = request.form['text_input']
+
+    # Chamar a função de conversão de texto para áudio
+    wav_file = audio_service.text_to_wav(text)
+
+    if wav_file:
+        return send_file(wav_file, as_attachment=True)
+    else:
+        return "Erro ao gerar o áudio.", 500
+
 
 if __name__ == '__main__':
     init_db()
