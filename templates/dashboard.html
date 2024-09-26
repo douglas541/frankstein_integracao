@@ -5,6 +5,27 @@
 {% block extra_head %}
 <!-- Adicionar FontAwesome para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<!-- Adiciona máscara para o campo de telefone -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Inicialmente, exibe o campo de número de telefone
+        $('#recipient_field').html('<label for="phone_number">Número de Telefone (WhatsApp):</label><input type="text" id="phone_number" name="recipient" placeholder="(XX) XXXXX-XXXX" required>');
+        $('#phone_number').mask('(00) 00000-0000');
+
+        // Alterna entre campos conforme a seleção de canal
+        $('#channel').change(function () {
+            var selectedChannel = $(this).val();
+            if (selectedChannel === 'whatsapp') {
+                $('#recipient_field').html('<label for="phone_number">Número de Telefone (WhatsApp):</label><input type="text" id="phone_number" name="recipient" placeholder="(XX) XXXXX-XXXX" required>');
+                $('#phone_number').mask('(00) 00000-0000');
+            } else if (selectedChannel === 'telegram') {
+                $('#recipient_field').html('<label for="chat_id">Chat ID ou Username (Telegram):</label><input type="text" id="chat_id" name="recipient" placeholder="Chat ID ou Username" required>');
+            }
+        });
+    });
+</script>
 {% endblock %}
 
 {% block content %}
@@ -32,37 +53,56 @@
 
 <div class="main-content">
     <h2>Bem-vindo, {{ username }}!</h2>
-    
+
     <!-- Seção de Tarefas de Manutenção -->
     {% if maintenance_tasks %}
-        <h3>Tarefas de Manutenção Preventiva para Hoje</h3>
-        <ul>
-            {% for task in maintenance_tasks %}
-                <li>{{ task }}</li>
-            {% endfor %}
-        </ul>
+    <h3>Tarefas de Manutenção Preventiva para Hoje</h3>
+    <ul>
+        {% for task in maintenance_tasks %}
+        <li>{{ task }}</li>
+        {% endfor %}
+    </ul>
     {% else %}
-        <p>Não há tarefas de manutenção para hoje.</p>
+    <p>Não há tarefas de manutenção para hoje.</p>
     {% endif %}
 
     <!-- Seção de Notícias -->
     <h3>Notícias Agro da Região</h3>
     <div class="news-section">
         {% if noticias %}
-            <ul class="news-list">
-                {% for noticia in noticias %}
-                    <li class="news-item">
-                        <a href="{{ noticia.url }}" target="_blank">
-                            <h4>{{ noticia.title }}</h4>
-                            <p>{{ noticia.description }}</p>
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>
+        <ul class="news-list">
+            {% for noticia in noticias %}
+            <li class="news-item">
+                <a href="{{ noticia.url }}" target="_blank">
+                    <h4>{{ noticia.title }}</h4>
+                    <p>{{ noticia.description }}</p>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
         {% else %}
-            <p>Não há notícias disponíveis no momento.</p>
+        <p>Não há notícias disponíveis no momento.</p>
         {% endif %}
     </div>
-    <!-- Conteúdo adicional do dashboard -->
+
+    <!-- Seção para enviar relatório -->
+    <div class="report-section">
+        <h3>Enviar Relatório</h3>
+        <form method="POST" action="{{ url_for('send_report') }}">
+            <div class="form-group">
+                <label for="channel">Canal:</label>
+                <select id="channel" name="channel" required>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="telegram">Telegram</option>
+                </select>
+            </div>
+
+            <div id="recipient_field" class="form-group">
+                <!-- O campo correto será inserido aqui dinamicamente -->
+            </div>
+
+            <button type="submit" class="button-save">Enviar Relatório</button>
+        </form>
+    </div>
 </div>
 {% endblock %}
