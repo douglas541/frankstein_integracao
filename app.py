@@ -577,6 +577,9 @@ def logout():
     session.pop("username", None)
     return redirect(url_for("login"))
 
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 @cache.cached(timeout=6 * 3600, key_prefix="lat_lon_{city}_{state}")
 def get_lat_lon(city, state, api_key=CLIMA_API_KEY):
