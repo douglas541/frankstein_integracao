@@ -5,27 +5,7 @@
 {% block extra_head %}
 <!-- Adicionar FontAwesome para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<!-- Adicionar JQuery e máscara para o campo de telefone -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // Inicialmente, exibe o campo de número de telefone
-        $('#recipient_field').html('<label for="phone_number">Número de Telefone (WhatsApp):</label><input type="text" id="phone_number" name="recipient" placeholder="(XX) XXXXX-XXXX" required>');
-        $('#phone_number').mask('(00) 00000-0000');
-
-        // Alterna entre campos conforme a seleção de canal
-        $('#channel').change(function () {
-            var selectedChannel = $(this).val();
-            if (selectedChannel === 'whatsapp') {
-                $('#recipient_field').html('<label for="phone_number">Número de Telefone (WhatsApp):</label><input type="text" id="phone_number" name="recipient" placeholder="(XX) XXXXX-XXXX" required>');
-                $('#phone_number').mask('(00) 00000-0000');
-            } else if (selectedChannel === 'telegram') {
-                $('#recipient_field').html('<label for="chat_id">Chat ID ou Username (Telegram):</label><input type="text" id="chat_id" name="recipient" placeholder="Chat ID ou Username" required>');
-            }
-        });
-    });
-</script>
 {% endblock %}
 
 {% block content %}
@@ -37,10 +17,10 @@
         <span>{{ cidade }}, {{ estado }}</span>
     </div>
     {% else %}
-        <div class="location-info">
-            <i class="fas fa-map-marker-alt"></i>
-            <span>Cadastre sua localização!</span>
-        </div>
+    <div class="location-info">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>Cadastre sua localização!</span>
+    </div>
     {% endif %}
 
     <!-- Clima no canto direito -->
@@ -61,21 +41,6 @@
 <div class="main-content">
     <h2>Bem-vindo, {{ username }}!</h2>
 
-        <!-- Seção de Tarefas de Manutenção -->
-        {% if maintenance_tasks %}
-        <h3>Tarefas de Manutenção Preventiva para Hoje</h3>
-        <ul>
-            {% for task in maintenance_tasks %}
-            <li>{{ task }}</li>
-            {% endfor %}
-        </ul>
-        <form method="POST" action="{{ url_for('send_maintenance_to_motoristas') }}">
-            <button type="submit" class="button-save">Enviar Tarefas aos Motoristas</button>
-        </form>
-        {% else %}
-        <p>Não há tarefas de manutenção para hoje.</p>
-        {% endif %}
-
     <!-- Seção de Notícias -->
     <h3>Notícias Agro da Região</h3>
     <div class="news-section">
@@ -95,23 +60,26 @@
         {% endif %}
     </div>
 
+    <!-- Seção de Tarefas de Manutenção -->
+    {% if maintenance_tasks %}
+    <h3>Tarefas de Manutenção Preventiva para Hoje</h3>
+    <ul>
+        {% for task in maintenance_tasks %}
+        <li>{{ task }}</li>
+        {% endfor %}
+    </ul>
+    <form method="POST" action="{{ url_for('send_report', message_type='checklist', recipient='5889129769') }}">
+        <button type="submit" class="button-save">Enviar Checklist aos Motoristas</button>
+    </form>
+    {% else %}
+    <p>Não há tarefas de manutenção para hoje.</p>
+    {% endif %}
+
     <!-- Seção para enviar relatório -->
     <div class="report-section">
         <h3>Enviar Relatório</h3>
-        <form method="POST" action="{{ url_for('send_report') }}">
-            <div class="form-group">
-                <label for="channel">Canal:</label>
-                <select id="channel" name="channel" required>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="telegram">Telegram</option>
-                </select>
-            </div>
-
-            <div id="recipient_field" class="form-group">
-                <!-- O campo correto será inserido aqui dinamicamente -->
-            </div>
-
-            <button type="submit" class="button-save">Enviar Relatório</button>
+        <form method="POST" action="{{ url_for('send_report', message_type='relatorio', recipient='5889129769') }}">
+            <button type="submit" class="button-save">Enviar Relatório aos Gerentes</button>
         </form>
     </div>
 </div>
