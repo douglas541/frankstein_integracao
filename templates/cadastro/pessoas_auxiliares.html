@@ -13,14 +13,17 @@
 
         let div = document.createElement('div');
         div.className = 'auxiliary-person';
-
         div.innerHTML = `
-            <input type="text" name="auxiliary_name_${index}" placeholder="Nome da Pessoa" required>
-            <input type="email" name="auxiliary_email_${index}" placeholder="Email da Pessoa" required>
-            <input type="tel" name="auxiliary_celular_${index}" placeholder="Celular da Pessoa" pattern="\\d{10,11}" required>
-            <button type="button" onclick="removeAuxiliaryPerson(this)">Remover</button>
+            <input type="text" name="auxiliary_name_${index}" placeholder="Nome" required>
+            <input type="email" name="auxiliary_email_${index}" placeholder="Email" required>
+            <input type="tel" name="auxiliary_celular_${index}" placeholder="Celular" pattern="\\d{10,11}" required>
+            <input type="text" name="auxiliary_chat_id_${index}" placeholder="Chat ID">
+            <select name="auxiliary_role_${index}" required>
+                <option value="gerente">Gerente</option>
+                <option value="motorista">Motorista</option>
+            </select>
+            <button type="button" class="btn-remove" onclick="removeAuxiliaryPerson(this)">Remover</button>
         `;
-
         divBlock.appendChild(div);
         container.appendChild(divBlock);
     }
@@ -33,27 +36,40 @@
 {% endblock %}
 
 {% block content %}
-<h2>Pessoas Auxiliares</h2>
-{% if success_message %}
-    <p class="success-message">{{ success_message }}</p>
-{% endif %}
-{% if error_message %}
-    <p class="error-message">{{ error_message }}</p>
-{% endif %}
-<form action="/pessoas_auxiliares" method="POST">
-    <div id="auxiliary-people-container">
-        {% for person in auxiliaries %}
-            <div class="auxiliary-person-block">
-                <div class="auxiliary-person">
-                    <input type="text" name="auxiliary_name_{{ loop.index0 }}" placeholder="Nome da Pessoa" value="{{ person[0] }}" required>
-                    <input type="email" name="auxiliary_email_{{ loop.index0 }}" placeholder="Email da Pessoa" value="{{ person[1] }}" required>
-                    <input type="tel" name="auxiliary_celular_{{ loop.index0 }}" placeholder="Celular da Pessoa" value="{{ person[2] }}" pattern="\d{10,11}" required>
-                    <button type="button" onclick="removeAuxiliaryPerson(this)">Remover</button>
+<div class="auxiliary-people-container">
+    <h2>Pessoas Auxiliares</h2>
+    {% if success_message %}
+        <p class="success-message">{{ success_message }}</p>
+    {% endif %}
+    {% if error_message %}
+        <p class="error-message">{{ error_message }}</p>
+    {% endif %}
+
+    <form action="/pessoas_auxiliares" method="POST">
+        <div id="auxiliary-people-container">
+            <!-- Pessoas auxiliares já cadastradas -->
+            {% for person in auxiliaries %}
+                <div class="auxiliary-person-block">
+                    <div class="auxiliary-person">
+                        <input type="text" name="auxiliary_name_{{ loop.index0 }}" value="{{ person['name'] }}" placeholder="Nome" required>
+                        <input type="email" name="auxiliary_email_{{ loop.index0 }}" value="{{ person['email'] }}" placeholder="Email" required>
+                        <input type="tel" name="auxiliary_celular_{{ loop.index0 }}" value="{{ person['celular'] }}" placeholder="Celular" required>
+                        <input type="text" name="auxiliary_chat_id_{{ loop.index0 }}" value="{{ person['chat_id'] }}" placeholder="Chat ID">
+                        <select name="auxiliary_role_{{ loop.index0 }}" required>
+                            <option value="gerente" {% if person['role'] == 'gerente' %}selected{% endif %}>Gerente</option>
+                            <option value="motorista" {% if person['role'] == 'motorista' %}selected{% endif %}>Motorista</option>
+                        </select>
+                        <button type="button" class="btn-remove" onclick="removeAuxiliaryPerson(this)">Remover</button>
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
-    </div>
-    <button type="button" onclick="addAuxiliaryPerson()">Adicionar Pessoa Auxiliar</button>
-    <button type="submit" class="button-save">Salvar</button>
-</form>
+            {% endfor %}
+        </div>
+
+        <!-- Botão para adicionar pessoa -->
+        <button type="button" class="btn-add-person" onclick="addAuxiliaryPerson()">Adicionar Pessoa Auxiliar</button>
+
+        <!-- Botão salvar -->
+        <button type="submit" class="button-save">Salvar</button>
+    </form>
+</div>
 {% endblock %}
