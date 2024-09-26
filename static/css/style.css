@@ -1,6 +1,3 @@
-html {
-    overflow-y: scroll;
-}
 
 * {
     box-sizing: border-box;
@@ -8,13 +5,22 @@ html {
     padding: 0;
 }
 
-/* Reset e estilos base */
-body {
+/* Estilos globais */
+html, body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    font-family: 'Arial', sans-serif;
     background-color: #f4f7f6;
+    color: #333;
+}
+
+/* Centralizar e estilizar o título */
+h1 {
+    text-align: center;
+    font-size: 36px;
+    color: #4caf50;
+    margin-bottom: 40px;
 }
 
 /* Menu de Navegação Global */
@@ -139,74 +145,117 @@ button:hover {
     font-weight: bold;
     color: #333;
 }
-
-/* Ações do Formulário */
-.form-actions {
-    text-align: right;
+/* Estilos gerais */
+h1 {
+    text-align: center;
+    color: #2d572c;
+    margin-bottom: 30px;
 }
 
-/* Seção de Máquinas */
-.machines-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.machine-block {
-    border: 1px solid #ccc; /* Borda ao redor do bloco */
-    padding: 20px;
+.btn-add-machine {
+    display: inline-block;
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 16px;
     border-radius: 5px;
-    background-color: #f9f9f9; /* Fundo levemente diferente */
+    margin-bottom: 20px;
+    transition: background-color 0.3s;
 }
 
-.machine {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+.btn-add-machine:hover {
+    background-color: #45a049;
 }
 
-.machine img {
-    width: 100px;
-    height: 100px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: transform 0.2s;
+.machine-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 40px;
 }
 
-.machine img:hover {
+.machine-table th, .machine-table td {
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.machine-table th {
+    background-color: #f2f2f2;
+    color: #333;
+    font-weight: bold;
+}
+
+.machine-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.machine-table td.machine-image {
+    width: 150px;
+}
+
+.machine-table td.machine-image img {
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.machine-table td.machine-image img:hover {
     transform: scale(1.05);
 }
 
-.machine label {
-    font-size: 18px;
-    font-weight: bold;
-    flex-grow: 1;
-}
-
-.machine-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.machine-controls button {
-    background-color: #f44336; /* Cor de remoção (vermelho) */
-    padding: 5px 10px;
+/* Botões de ação */
+.btn-action {
+    display: inline-block;
+    padding: 8px 12px;
     font-size: 14px;
+    color: white;
+    border: none;
     border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s;
 }
 
-.machine-controls button:hover {
+.btn-edit {
+    background-color: #ff9800;
+}
+
+.btn-edit:hover {
+    background-color: #e68900;
+}
+
+.btn-delete {
+    background-color: #f44336;
+}
+
+.btn-delete:hover {
     background-color: #d32f2f;
 }
 
-.machine-controls input {
-    width: 50px;
-    text-align: center;
-    border: 1px solid #d9d9d9;
-    border-radius: 5px;
-    padding: 5px;
+@media (max-width: 768px) {
+    .machine-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .machine-table th, .machine-table td {
+        white-space: nowrap;
+    }
 }
+
+
+/* Centralizar o botão de salvar */
+.form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
 
 /* Seção de Pessoas Auxiliares */
 .auxiliary-person-block {
@@ -482,6 +531,15 @@ p {
     margin-bottom: 15px;
 }
 
+.form-add-machine {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 input[type="text"],
 input[type="password"],
 input[type="email"],
@@ -548,4 +606,380 @@ a:hover {
         margin: 20px;
         padding: 20px;
     }
+}
+
+.btn-save {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-save:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .form-add-machine {
+        padding: 15px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    textarea,
+    select {
+        font-size: 14px;
+    }
+
+    .btn-save {
+        font-size: 16px;
+        padding: 12px;
+    }
+}
+
+input[type="text"],
+input[type="date"],
+textarea,
+select {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Estilos gerais */
+h1 {
+    text-align: center;
+    color: #2d572c;
+    margin-bottom: 30px;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.form-add-machine {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Grupos de formulário */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="date"],
+textarea,
+select {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    outline: none;
+}
+
+textarea {
+    height: 100px;
+    resize: none;
+}
+
+/* Estilo do campo de seleção */
+select {
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+}
+
+select option {
+    padding: 10px;
+    font-size: 16px;
+}
+
+/* Botão de salvar */
+.btn-save {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-save:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .form-add-machine {
+        padding: 15px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    textarea,
+    select {
+        font-size: 14px;
+    }
+
+    .btn-save {
+        font-size: 16px;
+        padding: 12px;
+    }
+}
+
+/* Botão de adicionar máquina */
+.btn-add-machine {
+    display: inline-block;
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-add-machine:hover {
+    background-color: #45a049;
+}
+
+/* Tabela de máquinas */
+.machine-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 40px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.machine-table th, .machine-table td {
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.machine-table th {
+    background-color: #f2f2f2;
+    color: #333;
+    font-weight: bold;
+}
+
+.machine-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+.machine-image img {
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.machine-image img:hover {
+    transform: scale(1.05);
+}
+
+/* Botões de ação */
+.btn-action {
+    display: inline-block;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-edit {
+    background-color: #ff9800;
+}
+
+.btn-edit:hover {
+    background-color: #e68900;
+}
+
+.btn-delete {
+    background-color: #f44336;
+}
+
+.btn-delete:hover {
+    background-color: #d32f2f;
+}
+
+
+.auxiliary-people-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    text-align: center;
+    font-size: 32px;
+    color: #4caf50;
+    margin-bottom: 20px;
+}
+
+.success-message, .error-message {
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.success-message {
+    color: green;
+}
+
+.error-message {
+    color: red;
+}
+
+/* Estilos dos blocos de pessoas auxiliares */
+.auxiliary-person-block {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.auxiliary-person {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    gap: 10px;
+    width: 100%;
+}
+
+.auxiliary-person input, 
+.auxiliary-person select {
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    flex: 1;
+    min-width: 180px;
+    box-sizing: border-box;
+}
+
+.auxiliary-person select {
+    width: 150px;
+}
+
+/* Botão Remover */
+.btn-remove {
+    background-color: #f44336;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-remove:hover {
+    background-color: #d32f2f;
+}
+
+/* Botão Adicionar Pessoa */
+.btn-add-person {
+    display: block;
+    background-color: #2196f3;
+    color: white;
+    padding: 12px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 20px 0;
+    text-align: center;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+.btn-add-person:hover {
+    background-color: #1976d2;
+}
+
+/* Botão Salvar */
+.button-save {
+    display: block;
+    background-color: #4caf50;
+    color: white;
+    padding: 14px 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    text-align: center;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+.button-save:hover {
+    background-color: #45a049;
 }

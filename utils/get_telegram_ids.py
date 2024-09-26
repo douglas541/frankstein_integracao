@@ -4,11 +4,13 @@ import requests
 
 def get_chat_ids():
     # Carregar a chave da API do Telegram a partir da variável de ambiente
-    telegram_api_key = os.getenv("telegram_api_key")
+    try:
+        telegram_api_key = os.getenv("telegram_api_key")
 
-    if not telegram_api_key:
-        raise ValueError("A variável de ambiente 'telegram_api_key' não está definida.")
-
+        if not telegram_api_key:
+            raise ValueError("A variável de ambiente 'telegram_api_key' não está definida.")
+    except Exception as e:
+        print(e)
     # URL da API de updates do Telegram
     url = f"https://api.telegram.org/bot{telegram_api_key}/getUpdates"
 
