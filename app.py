@@ -99,9 +99,9 @@ def init_db():
                         user_id INTEGER NOT NULL,
                         name TEXT NOT NULL,
                         email TEXT NOT NULL,
-                        celular TEXT NOT NULL,
+                        celular TEXT UNIQUE NOT NULL,  -- Celular agora é único
                         chat_id TEXT,
-                        role TEXT NOT NULL, -- 'gerente' ou 'motorista'
+                        role TEXT NOT NULL,  -- 'gerente' ou 'motorista'
                         FOREIGN KEY(user_id) REFERENCES users(id)
                         )""")
 
@@ -277,39 +277,54 @@ def infer_series_from_model(model):
 def generate_maintenance_tasks():
     """
     Função para gerar as tarefas de manutenção diárias para cada tipo de máquina.
+    Se as tarefas já existirem para o dia atual, apenas envia os checklists aos motoristas.
     """
     # Verificar se já existem tarefas de manutenção para hoje
+    today_date = str(datetime.now().date())
     with connect_db() as conn:
-        today_date = str(datetime.now().date())
-        existing_tasks = conn.execute(
-            """
+        existing_tasks = conn.execute('''
             SELECT 1 FROM maintenance_tasks WHERE date = ?
-        """,
-            (today_date,),
-        ).fetchone()
+        ''', (today_date,)).fetchone()
 
-    if existing_tasks:
-        print(
-            "As tarefas de manutenção já foram geradas para hoje. A função não será executada novamente."
-        )
-        return  # Não executa o restante da função se já existirem tarefas para hoje
-
-    machine_series_manuals = {
-        "R Series": "manualOperador_7200J_7215J_7230J.pdf",
-        "J Series 7200": "manualOperador_7200J_7215J_7230J.pdf",
-        "M Series": "manualOperador_7200J_7215J_7230J.pdf",
-        # Adicione outros manuais conforme necessário
-    }
-
+    # Obter todas as máquinas cadastradas, incluindo o user_id
     with connect_db() as conn:
-        # Obter todas as máquinas cadastradas, incluindo o user_id
-        machines = conn.execute("""
+        machines = conn.execute('''
             SELECT m.id, m.user_id, m.model, m.motorista_id, a.name as motorista_name, a.email, a.celular
             FROM machines m
             LEFT JOIN auxiliary_people a ON m.motorista_id = a.id
-        """).fetchall()
+        ''').fetchall()
 
-    # Iterar sobre cada máquina e gerar o checklist de manutenção
+    if existing_tasks:
+        print("As tarefas de manutenção já foram geradas para hoje. Enviando checklists aos motoristas.")
+        for machine in machines:
+            machine_id = machine[0]
+            motorista_id = machine[3]
+            motorista_name = machine[4]
+            motorista_email = machine[5]
+            motorista_celular = machine[6]
+
+            # Recuperar as tarefas de manutenção para o motorista atual
+            with connect_db() as conn:
+                tasks_row = conn.execute('''
+                    SELECT tasks FROM maintenance_tasks
+                    WHERE motorista_id = ? AND date = ?
+                ''', (motorista_id, today_date)).fetchone()
+
+            if tasks_row:
+                maintenance_tasks = eval(tasks_row[0])
+                send_checklist_to_motorista(motorista_name, motorista_celular, maintenance_tasks)
+            else:
+                print(f"Não há tarefas de manutenção para o motorista {motorista_name} hoje.")
+        return  # Não executa o restante da função se já existirem tarefas para hoje
+
+    # Se não existem tarefas, gerar novas
+    machine_series_manuals = {
+        'R Series': 'manualOperador_7200J_7215J_7230J.pdf',
+        'J Series 7200': 'manualOperador_7200J_7215J_7230J.pdf',
+        'M Series': 'manualOperador_7200J_7215J_7230J.pdf',
+        # Adicione outros manuais conforme necessário
+    }
+
     for machine in machines:
         machine_id = machine[0]
         user_id = machine[1]
@@ -319,15 +334,13 @@ def generate_maintenance_tasks():
         motorista_email = machine[5]
         motorista_celular = machine[6]
 
+        # Obter os IDs dos gerentes associados à máquina
         with connect_db() as conn:
-            gerente_rows = conn.execute(
-                """
+            gerente_rows = conn.execute('''
                 SELECT gerente_id FROM machine_managers WHERE machine_id = ?
-            """,
-                (machine_id,),
-            ).fetchall()
+            ''', (machine_id,)).fetchall()
         gerente_ids = [str(row[0]) for row in gerente_rows]
-        gerente_ids_str = ",".join(gerente_ids) if gerente_ids else None
+        gerente_ids_str = ','.join(gerente_ids) if gerente_ids else None
 
         # Inferir a série da máquina com base no modelo
         series = infer_series_from_model(model)
@@ -389,37 +402,41 @@ def generate_maintenance_tasks():
 
             # Armazenar o checklist no banco de dados
             with connect_db() as conn:
-                conn.execute(
-                    """
+                conn.execute('''
                     INSERT INTO maintenance_tasks (user_id, motorista_id, gerente_ids, date, tasks)
                     VALUES (?, ?, ?, ?, ?)
-                """,
-                    (
-                        user_id,
-                        motorista_id,
-                        gerente_ids_str,
-                        today_date,
-                        str(maintenance_tasks),
-                    ),
-                )
+                ''', (user_id, motorista_id, gerente_ids_str, today_date, str(maintenance_tasks)))
                 conn.commit()
+
             # Enviar o checklist para o motorista
-            send_checklist_to_motorista(
-                motorista_name, motorista_email, maintenance_tasks, motorista_id
-            )
+            send_checklist_to_motorista(motorista_name, motorista_email, maintenance_tasks)
 
 
-def send_checklist_to_motorista(motorista_name, motorista_email, maintenance_tasks):
+
+def send_checklist_to_motorista(motorista_name, motorista_celular, maintenance_tasks):
     """
-    Função para enviar o checklist de manutenção para o motorista.
+    Função para enviar o checklist de manutenção para o motorista e exibir o chat_id.
     """
+    # Buscar o chat_id do motorista com base no número de telefone (celular)
+    with connect_db() as conn:
+        motorista_info = conn.execute('''
+            SELECT chat_id FROM auxiliary_people
+            WHERE celular = ?
+        ''', (motorista_celular,)).fetchone()
+    # Verificar se o motorista tem um chat_id
+    chat_id = motorista_info[0] if motorista_info else "Chat ID não cadastrado"
+
+    # Construir a mensagem com o checklist de manutenção
     message = f"Olá {motorista_name},\n\nAqui está o checklist de manutenção preventiva para hoje:\n\n"
     for task in maintenance_tasks:
         message += f"- {task}\n"
 
-    # Exemplo de envio (definir o método de envio, como e-mail ou WhatsApp)
-    print(f"Checklist enviado para {motorista_email}: \n{message}")
-    # send_email(motorista_email, "Checklist de Manutenção", message)
+    # Exibir o número de telefone e o chat_id no console (ou enviar via algum canal)
+    print(f"Checklist enviado para o número {motorista_celular} e Chat ID {chat_id}: \n{message}")
+
+    # Aqui você pode adicionar lógica para enviar a mensagem via e-mail, chat ou outra plataforma
+    # Exemplo:
+    # send_to_chat(chat_id, message)  # Se houver integração de envio por chat
 
 
 @app.route("/send_maintenance_to_motoristas", methods=["POST"])
