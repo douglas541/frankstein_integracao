@@ -1395,17 +1395,24 @@ def send_gerente_report(gerente_id):
 
 
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.pdfgen import canvas
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.units import cm, inch, mm
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Table,
+    TableStyle,
+    Paragraph,
+    Spacer,
+    Image,
+    PageBreak,
+)
 from datetime import datetime
 import io
 
 def generate_gerente_report_pdf(gerente_id):
     """
-    Gera um relatório PDF das tarefas concluídas pelos motoristas subordinados ao gerente fornecido.
+    Gera um relatório PDF aprimorado das tarefas concluídas pelos motoristas subordinados ao gerente fornecido.
     """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
@@ -1413,53 +1420,71 @@ def generate_gerente_report_pdf(gerente_id):
 
     # Estilos e fontes
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('Title', fontSize=24, alignment=1, spaceAfter=20)
-    subtitle_style = ParagraphStyle('Subtitle', fontSize=16, textColor=colors.HexColor("#0066CC"))
-    table_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ])
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Title'],
+        fontSize=24,
+        alignment=1,
+        spaceAfter=20,
+    )
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Heading2'],
+        fontSize=18,
+        textColor=colors.HexColor("#0066CC"),
+        spaceAfter=10,
+    )
+    normal_style = styles['Normal']
+
+    # Cabeçalho com logotipo
+    logo_path = 'static/images/logo.webp'  # Caminho para o logotipo da empresa
+    try:
+        logo = Image(logo_path, width=2 * inch, height=2 * inch)
+        logo.hAlign = 'CENTER'
+        elements.append(logo)
+    except Exception as e:
+        print(f"Erro ao carregar o logotipo: {e}")
 
     # Título do relatório
     today_date = datetime.now().strftime('%d/%m/%Y')
     title = Paragraph(f"Relatório de Tarefas Concluídas ({today_date})", title_style)
     elements.append(title)
+    elements.append(Spacer(1, 12))
 
     with connect_db() as conn:
         conn.row_factory = sqlite3.Row
 
         # Obter motoristas subordinados ao gerente
         motoristas = conn.execute('''
-            SELECT ap.id as motorista_id, ap.name as motorista_name
+            SELECT DISTINCT ap.id as motorista_id, ap.name as motorista_name
             FROM auxiliary_people ap
-            JOIN machine_managers mm ON mm.gerente_id = ?
-            JOIN machines m ON m.id = mm.machine_id AND m.motorista_id = ap.id
+            JOIN machines m ON m.motorista_id = ap.id
+            JOIN machine_managers mm ON mm.machine_id = m.id
+            WHERE mm.gerente_id = ?
         ''', (gerente_id,)).fetchall()
 
         if not motoristas:
-            elements.append(Paragraph("Nenhum motorista subordinado encontrado para o gerente.", subtitle_style))
+            elements.append(Paragraph("Nenhum motorista subordinado encontrado para o gerente.", normal_style))
             doc.build(elements)
             buffer.seek(0)
             return buffer
 
         # Obter tarefas concluídas de cada motorista
         report_data = []
+        today_iso_date = datetime.now().strftime('%Y-%m-%d')
+        total_tarefas = 0
         for motorista in motoristas:
             motorista_id = motorista['motorista_id']
             motorista_name = motorista['motorista_name']
-
             # Obter tarefas concluídas do motorista
             completed_tasks = conn.execute('''
                 SELECT mti.task, mti.status
                 FROM maintenance_task_items mti
                 JOIN maintenance_tasks mt ON mti.maintenance_task_id = mt.id
-                WHERE mt.motorista_id = ? AND mt.date = ? AND mti.status = 'concluída'
-            ''', (motorista_id, today_date)).fetchall()
-
+                WHERE mt.motorista_id = ? AND mt.date = ? AND mti.status = ?
+            ''', (motorista_id, today_iso_date, 'concluída')).fetchall()
             if completed_tasks:
+                total_tarefas += len(completed_tasks)
                 report_data.append({
                     'motorista_name': motorista_name,
                     'tasks': completed_tasks
@@ -1467,29 +1492,85 @@ def generate_gerente_report_pdf(gerente_id):
 
         # Caso não existam tarefas concluídas
         if not report_data:
-            elements.append(Paragraph("Nenhuma tarefa concluída para os motoristas subordinados ao gerente.", subtitle_style))
+            elements.append(Paragraph("Nenhuma tarefa concluída para os motoristas subordinados ao gerente.", normal_style))
             doc.build(elements)
             buffer.seek(0)
             return buffer
 
+        # Adicionar sumário
+        elements.append(Paragraph(f"Total de Motoristas: {len(report_data)}", normal_style))
+        elements.append(Paragraph(f"Total de Tarefas Concluídas: {total_tarefas}", normal_style))
+        elements.append(Spacer(1, 12))
+
         # Gerar o relatório formatado
         for data in report_data:
             elements.append(Paragraph(f"Motorista: {data['motorista_name']}", subtitle_style))
+            elements.append(Spacer(1, 6))
 
             # Construir a tabela de tarefas concluídas
             table_data = [["Tarefa", "Status"]]
             for task in data['tasks']:
-                table_data.append([task['task'], task['status']])
+                table_data.append([Paragraph(task['task'], normal_style), task['status'].capitalize()])
 
-            table = Table(table_data, colWidths=[10 * cm, 4 * cm])
-            table.setStyle(table_style)
+            table = Table(table_data, colWidths=[12 * cm, 4 * cm])
+            # Estilo da tabela
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#4F81BD")),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#DCE6F1")),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey]),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ]))
             elements.append(table)
-            elements.append(Paragraph("<br/><br/>", styles["Normal"]))
+            elements.append(Spacer(1, 24))
 
-    # Build the PDF
-    doc.build(elements)
-    buffer.seek(0)
-    return buffer
+        # Adicionar rodapé com número de páginas
+        def add_page_number(canvas, doc):
+            page_num = canvas.getPageNumber()
+            text = f"Página {page_num}"
+            canvas.drawRightString(200 * mm, 15 * mm, text)
+        
+        # Build the PDF
+        doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
+        buffer.seek(0)
+        return buffer
+
+@app.route("/gerar_relatorio", methods=["GET", "POST"])
+def gerar_relatorio():
+    """
+    Permite que o gerente gere e receba o relatório via Telegram ao clicar no botão no dashboard.
+    """
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    # Verificar se o usuário é um gerente
+    with connect_db() as conn:
+        gerente_info = conn.execute('''
+            SELECT id, chat_id FROM auxiliary_people WHERE user_id = ? AND role = 'gerente'
+        ''', (user_id,)).fetchone()
+
+    if not gerente_info:
+        flash("Você não tem permissões para gerar relatórios.")
+        return redirect(url_for("dashboard"))
+
+    gerente_id = gerente_info[0]
+    chat_id = gerente_info[1]
+
+    # Gera o PDF em memória
+    pdf_buffer = generate_gerente_report_pdf(gerente_id)
+
+    # Envia o PDF via Telegram
+    conversation_service = ConversationService()
+    conversation_service.send_telegram_media(chat_id, pdf_buffer)
+
+    flash("Relatório enviado para o seu Telegram com sucesso!")
+    return redirect(url_for("dashboard"))
+
 
 # Função para enviar o PDF como resposta em um endpoint Flask
 @app.route('/gerar_relatorio_pdf/<int:gerente_id>')
