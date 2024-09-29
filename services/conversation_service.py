@@ -1,6 +1,6 @@
 import requests
 import os
-
+import io
 
 class ConversationService:
     def __init__(self):
@@ -37,15 +37,24 @@ class ConversationService:
         else:
             return f"Erro ao enviar mensagem ao Telegram: {response.text}"
 
-    def send_telegram_media(self, recipient: str, media_path: str):
+    def send_telegram_media(self, recipient: str, media):
         """
         Envia um arquivo de mídia (PDF, imagem, vídeo, etc.) para o Telegram.
+        O arquivo pode ser enviado diretamente de um caminho ou de um buffer de memória (BytesIO).
         """
         url = f"https://api.telegram.org/bot{self.telegram_api_key}/sendDocument"
-        with open(media_path, "rb") as media_file:
-            files = {"document": media_file}
-            data = {"chat_id": recipient}
-            response = requests.post(url, data=data, files=files)
+
+        # Verifica se media é um caminho de arquivo ou buffer de memória
+        if isinstance(media, io.BytesIO):
+            media.seek(0)  # Certifique-se de que o ponteiro do buffer está no início
+            files = {"document": ('relatorio.pdf', media, 'application/pdf')}
+        else:
+            with open(media, "rb") as media_file:
+                files = {"document": media_file}
+
+        data = {"chat_id": recipient}
+        response = requests.post(url, data=data, files=files)
+
         if response.status_code == 200:
             return "Mídia enviada ao Telegram com sucesso."
         else:
