@@ -189,14 +189,11 @@
         </form>
     </div>
 
-    <!-- Seção para enviar relatório -->
-    <div class="report-section">
-        <h3>Enviar Relatório</h3>
-        <form method="POST" action="{{ url_for('send_report', message_type='relatorio', recipient='5889129769') }}">
-            <button type="submit" class="button-save">
-                <i class="fas fa-file-alt"></i> Enviar Relatório aos Gerentes
-            </button>
-        </form>
-    </div>
+    <!-- Exemplo de código HTML para o botão -->
+    <form action="{{ url_for('gerar_relatorio') }}" method="post">
+        <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+    </form>
+
+
 </div>
 {% endblock %}
