@@ -16,108 +16,127 @@
         }
     }
 </script>
+
+<style>
+    .machine-image img {
+        width: 6rem;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<h2>Máquinas</h2>
-<form action="/maquinas" method="POST" class="maquinas-form">
-    <div class="machines-container">
+<main class="container">
+    <h2>Máquinas</h2>
+    <form action="/maquinas" method="POST" class="maquinas-form">
+        <div class="machines-container">
 
-        <!-- Manual 1: 8260R, 8285R, 8310R, 8335R, 8360R -->
-        <div class="machine-block">
-            <h3>Máquinas Série R (8260R - 8360R)</h3>
-            <div class="machine">
-                <img src="{{ url_for('static', filename='images/machine1.jpeg') }}" alt="Máquina R Series" onclick="incrementMachine('machine_r')">
-                <label for="machine_r">Série R</label>
-                <div class="machine-controls">
-                    <button type="button" onclick="decrementMachine('machine_r')">Decrementar</button>
-                    <input type="text" id="machine_r" name="machine_r" value="{{ machine_r or 0 }}" readonly>
+            <!-- Manual 1: 8260R, 8285R, 8310R, 8335R, 8360R -->
+            <div class="machine-block">
+                <h3>Máquinas Série R (8260R - 8360R)</h3>
+                <div class="machine">
+                    <img src="{{ url_for('static', filename='images/machine1.jpeg') }}" alt="Máquina R Series"
+                        onclick="incrementMachine('machine_r')">
+                    <label for="machine_r">Série R</label>
+                    <div class="machine-controls">
+                        <button type="button" onclick="decrementMachine('machine_r')">Decrementar</button>
+                        <input type="text" id="machine_r" name="machine_r" value="{{ machine_r or 0 }}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual 2: 7200J, 7215J, 7230J -->
+            <div class="machine-block">
+                <h3>Máquinas Série J (7200J - 7230J)</h3>
+                <div class="machine">
+                    <img src="{{ url_for('static', filename='images/machine2.webp') }}" alt="Máquina J Series"
+                        onclick="incrementMachine('machine_j')">
+                    <label for="machine_j">Série J</label>
+                    <div class="machine-controls">
+                        <button type="button" onclick="decrementMachine('machine_j')">Decrementar</button>
+                        <input type="text" id="machine_j" name="machine_j" value="{{ machine_j or 0 }}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual 3: 6155M, 6175M, 6195M -->
+            <div class="machine-block">
+                <h3>Máquinas Série M (6155M - 6195M)</h3>
+                <div class="machine">
+                    <img src="{{ url_for('static', filename='images/machine3.avif') }}" alt="Máquina M Series"
+                        onclick="incrementMachine('machine_m')">
+                    <label for="machine_m">Série M</label>
+                    <div class="machine-controls">
+                        <button type="button" onclick="decrementMachine('machine_m')">Decrementar</button>
+                        <input type="text" id="machine_m" name="machine_m" value="{{ machine_m or 0 }}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual 4: 6135J - 6210J -->
+            <div class="machine-block">
+                <h3>Máquinas Série J (6135J - 6210J)</h3>
+                <div class="machine">
+                    <img src="{{ url_for('static', filename='images/machine4.avif') }}" alt="Máquina J Series (Grande)"
+                        onclick="incrementMachine('machine_j_grande')">
+                    <label for="machine_j_grande">Série J (Grande)</label>
+                    <div class="machine-controls">
+                        <button type="button" onclick="decrementMachine('machine_j_grande')">Decrementar</button>
+                        <input type="text" id="machine_j_grande" name="machine_j_grande"
+                            value="{{ machine_j_grande or 0 }}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual 5: 6110J - 6130J -->
+            <div class="machine-block">
+                <h3>Máquinas Série J (6110J - 6130J)</h3>
+                <div class="machine">
+                    <img src="{{ url_for('static', filename='images/machine5.avif') }}" alt="Máquina J Series (Pequeno)"
+                        onclick="incrementMachine('machine_j_pequeno')">
+                    <label for="machine_j_pequeno">Série J (Pequeno)</label>
+                    <div class="machine-controls">
+                        <button type="button" onclick="decrementMachine('machine_j_pequeno')">Decrementar</button>
+                        <input type="text" id="machine_j_pequeno" name="machine_j_pequeno"
+                            value="{{ machine_j_pequeno or 0 }}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual 6: M4040, M4030 -->
+            <div class="machine-block">
+                <h3>Máquinas M4040, M4030</h3>
+                <div class="machine">
+                    <img src="{{ url_for('static', filename='images/machine6.avif') }}" alt="Máquina M Series"
+                        onclick="incrementMachine('machine_m_series')">
+                    <label for="machine_m_series">Máquinas M4040 e M4030</label>
+                    <div class="machine-controls">
+                        <button type="button" onclick="decrementMachine('machine_m_series')">Decrementar</button>
+                        <input type="text" id="machine_m_series" name="machine_m_series"
+                            value="{{ machine_m_series or 0 }}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual 7: 4730, 4830 -->
+            <div class="machine-block">
+                <h3>Máquinas 4730 e 4830</h3>
+                <div class="machine">
+                    <img src="{{ url_for('static', filename='images/machine7.webp') }}" alt="Máquina 4730/4830"
+                        onclick="incrementMachine('machine_4730_4830')">
+                    <label for="machine_4730_4830">4730 / 4830</label>
+                    <div class="machine-controls">
+                        <button type="button" onclick="decrementMachine('machine_4730_4830')">Decrementar</button>
+                        <input type="text" id="machine_4730_4830" name="machine_4730_4830"
+                            value="{{ machine_4730_4830 or 0 }}" readonly>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Manual 2: 7200J, 7215J, 7230J -->
-        <div class="machine-block">
-            <h3>Máquinas Série J (7200J - 7230J)</h3>
-            <div class="machine">
-                <img src="{{ url_for('static', filename='images/machine2.webp') }}" alt="Máquina J Series" onclick="incrementMachine('machine_j')">
-                <label for="machine_j">Série J</label>
-                <div class="machine-controls">
-                    <button type="button" onclick="decrementMachine('machine_j')">Decrementar</button>
-                    <input type="text" id="machine_j" name="machine_j" value="{{ machine_j or 0 }}" readonly>
-                </div>
-            </div>
+        <!-- Botão Salvar -->
+        <div class="form-actions">
+            <button type="submit" class="button-save">Salvar</button>
         </div>
-
-        <!-- Manual 3: 6155M, 6175M, 6195M -->
-        <div class="machine-block">
-            <h3>Máquinas Série M (6155M - 6195M)</h3>
-            <div class="machine">
-                <img src="{{ url_for('static', filename='images/machine3.avif') }}" alt="Máquina M Series" onclick="incrementMachine('machine_m')">
-                <label for="machine_m">Série M</label>
-                <div class="machine-controls">
-                    <button type="button" onclick="decrementMachine('machine_m')">Decrementar</button>
-                    <input type="text" id="machine_m" name="machine_m" value="{{ machine_m or 0 }}" readonly>
-                </div>
-            </div>
-        </div>
-
-        <!-- Manual 4: 6135J - 6210J -->
-        <div class="machine-block">
-            <h3>Máquinas Série J (6135J - 6210J)</h3>
-            <div class="machine">
-                <img src="{{ url_for('static', filename='images/machine4.avif') }}" alt="Máquina J Series (Grande)" onclick="incrementMachine('machine_j_grande')">
-                <label for="machine_j_grande">Série J (Grande)</label>
-                <div class="machine-controls">
-                    <button type="button" onclick="decrementMachine('machine_j_grande')">Decrementar</button>
-                    <input type="text" id="machine_j_grande" name="machine_j_grande" value="{{ machine_j_grande or 0 }}" readonly>
-                </div>
-            </div>
-        </div>
-
-        <!-- Manual 5: 6110J - 6130J -->
-        <div class="machine-block">
-            <h3>Máquinas Série J (6110J - 6130J)</h3>
-            <div class="machine">
-                <img src="{{ url_for('static', filename='images/machine5.avif') }}" alt="Máquina J Series (Pequeno)" onclick="incrementMachine('machine_j_pequeno')">
-                <label for="machine_j_pequeno">Série J (Pequeno)</label>
-                <div class="machine-controls">
-                    <button type="button" onclick="decrementMachine('machine_j_pequeno')">Decrementar</button>
-                    <input type="text" id="machine_j_pequeno" name="machine_j_pequeno" value="{{ machine_j_pequeno or 0 }}" readonly>
-                </div>
-            </div>
-        </div>
-
-        <!-- Manual 6: M4040, M4030 -->
-        <div class="machine-block">
-            <h3>Máquinas M4040, M4030</h3>
-            <div class="machine">
-                <img src="{{ url_for('static', filename='images/machine6.avif') }}" alt="Máquina M Series" onclick="incrementMachine('machine_m_series')">
-                <label for="machine_m_series">Máquinas M4040 e M4030</label>
-                <div class="machine-controls">
-                    <button type="button" onclick="decrementMachine('machine_m_series')">Decrementar</button>
-                    <input type="text" id="machine_m_series" name="machine_m_series" value="{{ machine_m_series or 0 }}" readonly>
-                </div>
-            </div>
-        </div>
-
-        <!-- Manual 7: 4730, 4830 -->
-        <div class="machine-block">
-            <h3>Máquinas 4730 e 4830</h3>
-            <div class="machine">
-                <img src="{{ url_for('static', filename='images/machine7.webp') }}" alt="Máquina 4730/4830" onclick="incrementMachine('machine_4730_4830')">
-                <label for="machine_4730_4830">4730 / 4830</label>
-                <div class="machine-controls">
-                    <button type="button" onclick="decrementMachine('machine_4730_4830')">Decrementar</button>
-                    <input type="text" id="machine_4730_4830" name="machine_4730_4830" value="{{ machine_4730_4830 or 0 }}" readonly>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Botão Salvar -->
-    <div class="form-actions">
-        <button type="submit" class="button-save">Salvar</button>
-    </div>
-</form>
+    </form>
+</main>
 {% endblock %}

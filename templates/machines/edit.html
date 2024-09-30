@@ -1,50 +1,51 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h1>Editar Máquina</h1>
-<form method="POST">
-    <label>Modelo:</label>
-    <select name="model">
-        {% for series, models in machine_models.items() %}
+<main class="container">
+    <h1>Editar Máquina</h1>
+    <form method="POST">
+        <label>Modelo:</label>
+        <select name="model">
+            {% for series, models in machine_models.items() %}
             <optgroup label="{{ series }}">
                 {% for model in models %}
-                    <option value="{{ model }}" {% if model == machine['model'] %}selected{% endif %}>
-                        {{ model }}
-                    </option>
+                <option value="{{ model }}" {% if model==machine['model'] %}selected{% endif %}>
+                    {{ model }}
+                </option>
                 {% endfor %}
             </optgroup>
-        {% endfor %}
-    </select>
+            {% endfor %}
+        </select>
 
-    <label>Número de Série:</label>
-    <input type="text" name="serial_number" value="{{ machine['serial_number'] }}">
+        <label>Número de Série:</label>
+        <input type="text" name="serial_number" value="{{ machine['serial_number'] }}">
 
-    <label>Data de Compra:</label>
-    <input type="date" name="purchase_date" value="{{ machine['purchase_date'] }}">
+        <label>Data de Compra:</label>
+        <input type="date" name="purchase_date" value="{{ machine['purchase_date'] }}">
 
-    <label>Outros Detalhes:</label>
-    <textarea name="other_details">{{ machine['other_details'] }}</textarea>
+        <label>Outros Detalhes:</label>
+        <textarea name="other_details">{{ machine['other_details'] }}</textarea>
 
-    <label>Motorista:</label>
-    <select name="motorista_id">
-        <option value="">-- Selecione um motorista --</option>
-        {% for motorista in auxiliaries.motoristas %}
-            <option value="{{ motorista['id'] }}" {% if motorista['id'] == machine['motorista_id'] %}selected{% endif %}>
+        <label>Motorista:</label>
+        <select name="motorista_id">
+            <option value="">-- Selecione um motorista --</option>
+            {% for motorista in auxiliaries.motoristas %}
+            <option value="{{ motorista['id'] }}" {% if motorista['id']==machine['motorista_id'] %}selected{% endif %}>
                 {{ motorista['name'] }}
             </option>
-        {% endfor %}
-    </select>
+            {% endfor %}
+        </select>
 
-    <label>Gerentes:</label>
-    <select name="gerente_ids" multiple>
-        {% for gerente in auxiliaries.gerentes %}
+        <label>Gerentes:</label>
+        <select name="gerente_ids" multiple>
+            {% for gerente in auxiliaries.gerentes %}
             <option value="{{ gerente['id'] }}" {% if gerente['id'] in gerente_ids %}selected{% endif %}>
                 {{ gerente['name'] }}
             </option>
-        {% endfor %}
-    </select>
+            {% endfor %}
+        </select>
 
-    <button type="submit">Salvar</button>
-</form>
-
-
+        <button type="submit">Salvar</button>
+    </form>
+</main>
 {% endblock %}

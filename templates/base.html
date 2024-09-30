@@ -18,12 +18,25 @@
 </head>
 
 <style>
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        margin: 0;
+    }
+
+    /* O conteúdo principal deve ocupar o espaço disponível */
+    main {
+        flex: 1;
+    }
+
     #global_nav_container {
         width: 100%;
         height: 4.2rem;
         display: flex;
         align-items: center;
         justify-content: center;
+        padding: 40px;
     }
 
     #global_nav {
@@ -33,6 +46,59 @@
 
     #global_nav img {
         height: 100px;
+    }
+
+    button.danger {
+        background-color: var(--pico-danger, #dc3545); /* Define a cor de fundo como vermelho (Bootstrap 'danger' color) */
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button.danger:hover {
+        background-color: #c82333; /* Um vermelho mais escuro no hover, como o Bootstrap */
+    }
+
+    button.danger:active {
+        background-color: #bd2130; /* Cor ativa do botão ao ser clicado */
+    }
+
+    /* Estilos para o rodapé */
+    footer {
+        background-color: var(--pico-primary);
+        height: 150px;
+        color: var(--pico-primary-inverse);
+        text-align: center;
+        font-size: 0.9rem;
+        margin-top: auto;
+        border-top: 1px solid var(--pico-border-color);
+    }
+
+    footer a {
+        color: var(--pico-primary-inverse);
+        text-decoration: none;
+        margin: 0 10px;
+    }
+
+    footer a:hover {
+        text-decoration: underline;
+    }
+
+    .footer-links {
+        margin-top: 0.6rem;
+    }
+
+    .footer-links a {
+        display: inline-block;
+        font-size: 0.8rem;
+        margin: 0 15px;
+    }
+
+    .footer-copy {
+        margin-top: 0.6rem;
+        font-size: 0.6rem;
     }
 </style>
 
@@ -60,11 +126,24 @@
     {% endif %}
 
     <!-- Main Content Area -->
-    <div class="container">
+    <div>
         {% block content %}
         <!-- O conteúdo específico da página será inserido aqui -->
         {% endblock %}
     </div>
+
+    <!-- Rodapé -->
+    <footer>
+        <p>© 2024 Agro Sol. Todos os direitos reservados.</p>
+        <div class="footer-links">
+            <a href="#">Sobre</a>
+            <a href="#">Política de Privacidade</a>
+            <a href="#">Contato</a>
+        </div>
+        <div class="footer-copy">
+            <p>Desenvolvido por Agro Sol.</p>
+        </div>
+    </footer>
 
     <!-- Optional Scripts -->
     {% block extra_scripts %}{% endblock %}

@@ -6,105 +6,133 @@
 <!-- Adicionar FontAwesome para ícones -->
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-header .weather-info i {
+        margin-left: 1.2rem;
+    }
+
+    .main-content h2 {
+        margin-bottom: 2rem;
+    }
+
+    .task-buttons {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .task-buttons form {
+        width: 49%;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-header">
-    <!-- Localização no canto esquerdo -->
-    {% if cidade and estado %}
-    <div class="location-info">
-        <i class="fas fa-map-marker-alt"></i>
-        <span>{{ cidade }}, {{ estado }}</span>
-    </div>
-    {% else %}
-    <div class="location-info">
-        <i class="fas fa-map-marker-alt"></i>
-        <span>Cadastre sua localização!</span>
-    </div>
-    {% endif %}
-
-    <!-- Clima no canto direito -->
-    {% if weather %}
-    <div class="weather-info">
-        <i class="fas fa-thermometer-half"></i>
-        <span>{{ weather.temperature }} °C</span>
-        <i class="fas fa-cloud"></i>
-        <span>{{ weather.description }}</span>
-    </div>
-    {% else %}
-    <div class="weather-info">
-        <p class="error-message">Clima indisponível</p>
-    </div>
-    {% endif %}
-</div>
-
-<div class="main-content">
-    <h2>Bem-vindo, {{ username }}!</h2>
-
-    <!-- Seção de Notícias -->
-    <h3>Notícias Agro da Região</h3>
-    <div class="news-section">
-        {% if noticias %}
-        <ul class="news-list">
-            {% for noticia in noticias %}
-            <li class="news-item">
-                <a href="{{ noticia.url }}" target="_blank">
-                    <h4>{{ noticia.title }}</h4>
-                    <p>{{ noticia.description }}</p>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+<main id="dash-main">
+    <div class="dashboard-header container">
+        <!-- Localização no canto esquerdo -->
+        {% if cidade and estado %}
+        <div class="location-info">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ cidade }}, {{ estado }}</span>
+        </div>
         {% else %}
-        <p>Não há notícias disponíveis no momento.</p>
+        <div class="location-info">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Cadastre sua localização!</span>
+        </div>
+        {% endif %}
+
+        <!-- Clima no canto direito -->
+        {% if weather %}
+        <div class="weather-info">
+            <i class="fas fa-thermometer-half"></i>
+            <span>{{ weather.temperature }} °C</span>
+            <i class="fas fa-cloud"></i>
+            <span>{{ weather.description }}</span>
+        </div>
+        {% else %}
+        <div class="weather-info">
+            <p class="error-message">Clima indisponível</p>
+        </div>
         {% endif %}
     </div>
 
-    <!-- Seção de Tarefas de Manutenção -->
-    {% if maintenance_tasks %}
-    <h2>Tarefas de Manutenção</h2>
-    <table class="table-tasks">
-        <thead>
-            <tr>
-                <th>Motorista</th>
-                <th>Tarefa</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for task in maintenance_tasks %}
-            <tr>
-                <td>{{ task.motorista_name }}</td>
-                <td>{{ task.task }}</td>
-                <td class="task-status {% if task.status == 'concluída' %}completed{% else %}incomplete{% endif %}">
-                    {% if task.status == 'concluída' %}
-                    <i class="fas fa-check-circle"></i>
-                    {% else %}
-                    <i class="fas fa-times-circle"></i>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>Nenhuma tarefa de manutenção para hoje.</p>
-    {% endif %}
+    <div class="main-content container">
+        <h2>Bem-vindo, {{ username }}!</h2>
 
-    <!-- Botão de atribuir tarefas aos motoristas -->
-    <div class="assign-tasks-section">
-        <form method="POST" action="{{ url_for('assign_tasks') }}">
-            <button type="submit" class="button-assign">
-                <i class="fas fa-tasks"></i> Atribuir Tarefas aos Motoristas
-            </button>
-        </form>
+        <!-- Seção de Notícias -->
+        <h3>Notícias Agro da Região</h3>
+        <div class="news-section">
+            {% if noticias %}
+            <ul class="news-list">
+                {% for noticia in noticias %}
+                <li class="news-item">
+                    <a href="{{ noticia.url }}" target="_blank">
+                        <h4>{{ noticia.title }}</h4>
+                        <p>{{ noticia.description }}</p>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>Não há notícias disponíveis no momento.</p>
+            {% endif %}
+        </div>
+
+        <!-- Seção de Tarefas de Manutenção -->
+        {% if maintenance_tasks %}
+        <h2>Tarefas de Manutenção</h2>
+        <table class="table-tasks">
+            <thead>
+                <tr>
+                    <th>Motorista</th>
+                    <th>Tarefa</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in maintenance_tasks %}
+                <tr>
+                    <td>{{ task.motorista_name }}</td>
+                    <td>{{ task.task }}</td>
+                    <td class="task-status {% if task.status == 'concluída' %}completed{% else %}incomplete{% endif %}">
+                        {% if task.status == 'concluída' %}
+                        <i class="fas fa-check-circle"></i>
+                        {% else %}
+                        <i class="fas fa-times-circle"></i>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>Nenhuma tarefa de manutenção para hoje.</p>
+        {% endif %}
+
+        <div class="task-buttons">
+            <!-- Botão de atribuir tarefas aos motoristas -->
+            <form method="POST" action="{{ url_for('assign_tasks') }}">
+                <button type="submit" class="button-assign">
+                    <i class="fas fa-tasks"></i> Atribuir Tarefas aos Motoristas
+                </button>
+            </form>
+
+            <!-- Exemplo de código HTML para o botão -->
+            <form action="{{ url_for('gerar_relatorio') }}" method="post">
+                <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+            </form>
+        </div>
+
     </div>
-
-    <!-- Exemplo de código HTML para o botão -->
-    <form action="{{ url_for('gerar_relatorio') }}" method="post">
-        <button type="submit" class="btn btn-primary">Gerar Relatório</button>
-    </form>
-
-
-</div>
+</main>
 {% endblock %}
