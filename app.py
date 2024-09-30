@@ -22,7 +22,7 @@ from flask_caching import Cache
 # Import custom services
 from services import audio_service
 from services.conversation_service import ConversationService
-from services.audio_service import text_to_wav
+from services.audio_service import text_to_wav, wav_to_mp3
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
@@ -96,7 +96,7 @@ def init_db():
                         password TEXT NOT NULL,
                         full_name TEXT,
                         email TEXT,
-                        telefone TEXT,
+                        telefone TEXT UNIQUE NOT NULL,
                         endereco TEXT,
                         tamanho_fazenda REAL,
                         tipo_cultivo TEXT,
@@ -105,7 +105,8 @@ def init_db():
                         historico_pesticidas TEXT,
                         observacoes TEXT,
                         estado TEXT,
-                        cidade TEXT
+                        cidade TEXT,
+                        chat_id TEXT
                         )""")
 
         # Auxiliary people table with 'role' field
@@ -114,7 +115,7 @@ def init_db():
                         user_id INTEGER NOT NULL,
                         name TEXT NOT NULL,
                         email TEXT NOT NULL,
-                        celular TEXT UNIQUE NOT NULL,  -- Cell phone number is unique
+                        telefone TEXT UNIQUE NOT NULL,  -- Cell phone number is unique
                         chat_id TEXT,
                         role TEXT NOT NULL,  -- 'gerente' or 'motorista'
                         FOREIGN KEY(user_id) REFERENCES users(id)
@@ -168,6 +169,14 @@ def init_db():
                         status TEXT DEFAULT 'pendente',
                         FOREIGN KEY (maintenance_task_id) REFERENCES maintenance_tasks(id)
                         )''')
+        
+        conn.execute('''CREATE TABLE IF NOT EXISTS conversation_states (
+                    chat_id TEXT PRIMARY KEY,
+                    state TEXT,
+                    new_aux_name TEXT,
+                    new_aux_email TEXT,
+                    new_aux_phone TEXT
+                    )''')
         
         conn.commit()
 
@@ -249,7 +258,7 @@ def get_auxiliaries(user_id):
     with connect_db() as conn:
         auxiliaries = conn.execute(
             """
-            SELECT name, email, celular, chat_id, role
+            SELECT name, email, telefone, chat_id, role
             FROM auxiliary_people
             WHERE user_id = ?
         """,
@@ -260,7 +269,7 @@ def get_auxiliaries(user_id):
         {
             "name": aux[0],
             "email": aux[1],
-            "celular": aux[2],
+            "telefone": aux[2],
             "chat_id": aux[3],
             "role": aux[4],
         }
@@ -402,6 +411,7 @@ def generate_maintenance_tasks():
                 response = llm.qa.invoke(prompt)["result"]
                 maintenance_tasks = eval(response.strip())
                 if not isinstance(maintenance_tasks, list):
+                    print(maintenance_tasks)
                     maintenance_tasks = ["Erro ao gerar lista de tarefas."]
             except Exception as e:
                 maintenance_tasks = ["Erro ao gerar tarefas de manutenção."]
@@ -426,7 +436,7 @@ def assign_tasks_to_motoristas():
     # Get all drivers
     with connect_db() as conn:
         motoristas = conn.execute('''
-            SELECT a.id as motorista_id, a.name as motorista_name, a.celular, u.cidade, u.estado
+            SELECT a.id as motorista_id, a.name as motorista_name, a.telefone, u.cidade, u.estado
             FROM auxiliary_people a
             JOIN users u ON a.user_id = u.id
             WHERE a.role = 'motorista'
@@ -435,7 +445,7 @@ def assign_tasks_to_motoristas():
     for motorista in motoristas:
         motorista_id = motorista[0]
         motorista_name = motorista[1]
-        motorista_celular = motorista[2]
+        motorista_telefone = motorista[2]
         cidade = motorista[3]
         estado = motorista[4]
 
@@ -478,7 +488,7 @@ def assign_tasks_to_motoristas():
                     conn.commit()
 
                 # Send the checklist to the driver
-                send_checklist_to_motorista(motorista_name, motorista_celular, maintenance_tasks)
+                send_checklist_to_motorista(motorista_name, motorista_telefone, maintenance_tasks)
             else:
                 print(f"Não há tarefas de manutenção para o motorista {motorista_name} com o modelo {model} em {cidade}, {estado}.")
 
@@ -494,7 +504,7 @@ def assign_tasks():
     flash("Tarefas de manutenção atribuídas aos motoristas com sucesso!")
     return redirect(url_for("dashboard"))
 
-def send_checklist_to_motorista(motorista_name, motorista_celular, maintenance_tasks):
+def send_checklist_to_motorista(motorista_name, motorista_telefone, maintenance_tasks):
     """
     Send the maintenance checklist to the driver.
     """
@@ -502,9 +512,13 @@ def send_checklist_to_motorista(motorista_name, motorista_celular, maintenance_t
     with connect_db() as conn:
         motorista_info = conn.execute('''
             SELECT chat_id FROM auxiliary_people
-            WHERE celular = ?
-        ''', (motorista_celular,)).fetchone()
-    chat_id = motorista_info[0] if motorista_info else "Chat ID não cadastrado"
+            WHERE telefone = ?
+        ''', (motorista_telefone,)).fetchone()
+    chat_id = motorista_info[0] if motorista_info else None
+
+    if not chat_id:
+        print(f"Chat ID não cadastrado para o motorista {motorista_name}")
+        return
 
     # Build the message with the maintenance checklist
     message = f"Olá {motorista_name},\n\nAqui está o checklist de manutenção preventiva para hoje:\n\n"
@@ -515,11 +529,30 @@ def send_checklist_to_motorista(motorista_name, motorista_celular, maintenance_t
 
     try:
         conversation_service = ConversationService()
-        # Send message to the driver's chat_id
-        response = conversation_service.send_message(message, chat_id)
-        print(f"Checklist enviado para {motorista_name} (Chat ID: {chat_id})")
+        # Send text message to the driver's chat_id
+        response_text = conversation_service.send_message(message, chat_id)
+        print(f"Mensagem de texto enviada para {motorista_name} (Chat ID: {chat_id})")
+
+        # Generate audio from the message
+        wav_file_path = text_to_wav(message)
+        if wav_file_path:
+            # Convert WAV to MP3
+            mp3_file_path = wav_to_mp3(wav_file_path)
+
+            # Send audio message to the driver's chat_id
+            response_audio = conversation_service.send_message(
+                message=None,
+                recipient=chat_id,
+                message_type="media",
+                media=mp3_file_path
+            )
+            print(f"Áudio enviado para {motorista_name} (Chat ID: {chat_id})")
+        else:
+            print(f"Erro ao gerar o áudio para {motorista_name}")
+
     except Exception as e:
         print(f"Erro ao enviar para {motorista_name}: {e}")
+
 
 # ==========================================
 # Route Definitions - User Authentication
@@ -558,20 +591,57 @@ def register():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
+        confirm_password = request.form["confirm_password"]  # Nova variável
+        full_name = request.form["full_name"]
+        email = request.form["email"]
+        telefone = request.form["telefone"]
+        estado = request.form["estado"]
+        cidade = request.form["cidade"]
+
+        # Verificar se as senhas são iguais
+        if password != confirm_password:
+            error_message = "As senhas não correspondem. Por favor, tente novamente."
+            return render_template("register.html", error_message=error_message)
+
         hashed_password = generate_password_hash(password)
+
+        # Verificar se todos os campos foram preenchidos
+        if not all([username, password, full_name, email, telefone, estado, cidade]):
+            error_message = "Por favor, preencha todos os campos."
+            return render_template("register.html", error_message=error_message)
 
         with connect_db() as conn:
             try:
                 conn.execute(
-                    "INSERT INTO users (username, password) VALUES (?, ?)",
-                    (username, hashed_password),
+                    """
+                    INSERT INTO users (username, password, full_name, email, telefone, estado, cidade)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        username,
+                        hashed_password,
+                        full_name,
+                        email,
+                        telefone,
+                        estado,
+                        cidade,
+                    ),
                 )
                 conn.commit()
                 return redirect(url_for("login"))
             except sqlite3.IntegrityError:
-                error_message = "Usuário já existe!"
+                error_message = "Usuário já existe ou dados inválidos!"
+    
+    else:
+        error_message = None
 
-    return render_template("register.html", error_message=error_message)
+    # Carregar a lista de estados para o formulário
+    estados = requests.get(
+        "https://servicodados.ibge.gov.br/api/v1/localidades/estados"
+    ).json()
+
+    return render_template("register.html", error_message=error_message, estados=estados)
+
 
 @app.route("/logout")
 def logout():
@@ -589,7 +659,7 @@ def logout():
 @app.route("/dados_pessoais", methods=["GET", "POST"])
 def dados_pessoais():
     """
-    Route to view and update personal data, including state and city.
+    Route to view and update personal data.
     """
     if "user_id" not in session:
         return redirect(url_for("login"))
@@ -597,10 +667,8 @@ def dados_pessoais():
     user_id = session["user_id"]
 
     if request.method == "POST":
-        # Get form data, including state and city
+        # Get form data
         full_name = request.form["full_name"]
-        email = request.form["email"]
-        telefone = request.form["telefone"]
         endereco = request.form["endereco"]
         tamanho_fazenda = request.form["tamanho_fazenda"]
         tipo_cultivo = request.form["tipo_cultivo"]
@@ -608,23 +676,19 @@ def dados_pessoais():
         numero_funcionarios = request.form["numero_funcionarios"]
         historico_pesticidas = request.form["historico_pesticidas"]
         observacoes = request.form["observacoes"]
-        estado = request.form["estado"]  # New field
-        cidade = request.form["cidade"]  # New field
 
         # Update data in the database
         with connect_db() as conn:
             conn.execute(
                 """
                 UPDATE users
-                SET full_name = ?, email = ?, telefone = ?, endereco = ?, tamanho_fazenda = ?,
+                SET full_name = ?, endereco = ?, tamanho_fazenda = ?,
                     tipo_cultivo = ?, sistema_irrigacao = ?, numero_funcionarios = ?,
-                    historico_pesticidas = ?, observacoes = ?, estado = ?, cidade = ?
+                    historico_pesticidas = ?, observacoes = ?
                 WHERE id = ?
             """,
                 (
                     full_name,
-                    email,
-                    telefone,
                     endereco,
                     tamanho_fazenda,
                     tipo_cultivo,
@@ -632,8 +696,6 @@ def dados_pessoais():
                     numero_funcionarios,
                     historico_pesticidas,
                     observacoes,
-                    estado,
-                    cidade,
                     user_id,
                 ),
             )
@@ -645,44 +707,27 @@ def dados_pessoais():
     with connect_db() as conn:
         user = conn.execute(
             """
-            SELECT full_name, email, telefone, endereco, tamanho_fazenda,
+            SELECT full_name, endereco, tamanho_fazenda,
                    tipo_cultivo, sistema_irrigacao, numero_funcionarios,
-                   historico_pesticidas, observacoes, estado, cidade
+                   historico_pesticidas, observacoes
             FROM users
             WHERE id = ?
         """,
             (user_id,),
         ).fetchone()
 
-    # Load all states
-    estados = requests.get(
-        "https://servicodados.ibge.gov.br/api/v1/localidades/estados"
-    ).json()
-
-    # Load cities if state is already selected
-    cidades = None
-    if user[10]:  # If state is selected
-        cidades = requests.get(
-            f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{user[10]}/municipios"
-        ).json()
-
     return render_template(
         "cadastro/dados_pessoais.html",
         full_name=user[0],
-        email=user[1],
-        telefone=user[2],
-        endereco=user[3],
-        tamanho_fazenda=user[4],
-        tipo_cultivo=user[5],
-        sistema_irrigacao=user[6],
-        numero_funcionarios=user[7],
-        historico_pesticidas=user[8],
-        observacoes=user[9],
-        estado_selecionado=user[10],
-        cidade_selecionada=user[11],
-        estados=estados,
-        cidades=cidades,
+        endereco=user[1],
+        tamanho_fazenda=user[2],
+        tipo_cultivo=user[3],
+        sistema_irrigacao=user[4],
+        numero_funcionarios=user[5],
+        historico_pesticidas=user[6],
+        observacoes=user[7],
     )
+
 
 @app.route("/profile", methods=["GET", "POST"])
 def profile():
@@ -1119,10 +1164,10 @@ def pessoas_auxiliares():
                     for key, value in request.form.items()
                     if key.startswith("auxiliary_email_")
                 }
-                auxiliary_celulares = {
+                auxiliary_telefonees = {
                     key: value
                     for key, value in request.form.items()
-                    if key.startswith("auxiliary_celular_")
+                    if key.startswith("auxiliary_telefone_")
                 }
                 auxiliary_chat_ids = {
                     key: value
@@ -1140,20 +1185,20 @@ def pessoas_auxiliares():
                     name = auxiliary_names[key]
                     email_key = f"auxiliary_email_{index}"
                     email_aux = auxiliary_emails.get(email_key)
-                    celular_key = f"auxiliary_celular_{index}"
-                    celular_aux = auxiliary_celulares.get(celular_key)
+                    telefone_key = f"auxiliary_telefone_{index}"
+                    telefone_aux = auxiliary_telefonees.get(telefone_key)
                     chat_id_key = f"auxiliary_chat_id_{index}"
                     chat_id_aux = auxiliary_chat_ids.get(chat_id_key)
                     role_key = f"auxiliary_role_{index}"
                     role = auxiliary_roles.get(role_key)
 
-                    if name and email_aux and celular_aux and role:
+                    if name and email_aux and telefone_aux and role:
                         conn.execute(
                             """
-                            INSERT INTO auxiliary_people (user_id, name, email, celular, chat_id, role)
+                            INSERT INTO auxiliary_people (user_id, name, email, telefone, chat_id, role)
                             VALUES (?, ?, ?, ?, ?, ?)
                             """,
-                            (user_id, name, email_aux, celular_aux, chat_id_aux, role),
+                            (user_id, name, email_aux, telefone_aux, chat_id_aux, role),
                         )
                 conn.commit()
 
@@ -1230,87 +1275,264 @@ def send_report(message_type, recipient):
 
     return redirect(url_for("dashboard"))
 
+import re
+
+STATE_INITIAL = 'initial'
+STATE_COLLECT_NAME = 'collect_name'
+STATE_COLLECT_EMAIL = 'collect_email'
+STATE_COLLECT_PHONE = 'collect_phone'
+STATE_COLLECT_ROLE = 'collect_role'
+
 @app.route('/webhook', methods=['POST'])
 def telegram_webhook():
     update = request.get_json()
-    if 'message' in update and 'text' in update['message']:
-        chat_id = str(update['message']['chat']['id'])
-        text = update['message']['text'].strip()
-        # Process the message
+    chat_id = None
+    text = ''
+    phone_number = ''
+    #print(update)
+    if 'message' in update:
+        message = update['message']
+        chat_id = str(message['chat']['id'])
+
+        if 'text' in message:
+            text = message['text'].strip()
+        elif 'contact' in message:
+            # User sent their contact info
+            contact = message['contact']
+            phone_number = contact.get('phone_number', '').strip()
+
         with connect_db() as conn:
             conn.row_factory = sqlite3.Row
-            # Find the driver
-            motorista = conn.execute(
-                "SELECT * FROM auxiliary_people WHERE chat_id = ?",
+
+            state_row = conn.execute(
+                "SELECT * FROM conversation_states WHERE chat_id = ?",
                 (chat_id,)
             ).fetchone()
-            if motorista:
-                motorista_id = motorista['id']
-                # Find today's maintenance tasks assigned to the driver
-                today_date = str(datetime.now().date())
-                maintenance_task = conn.execute(
-                    "SELECT * FROM maintenance_tasks WHERE motorista_id = ? AND date = ?",
-                    (motorista_id, today_date)
-                ).fetchone()
-                if maintenance_task:
-                    maintenance_task_id = maintenance_task['id']
-                    # Find tasks in maintenance_task_items
-                    tasks = conn.execute(
-                        "SELECT * FROM maintenance_task_items WHERE maintenance_task_id = ?",
-                        (maintenance_task_id,)
-                    ).fetchall()
-                    # Process the text to determine which task is being updated
-                    import re
-                    match = re.match(r'Tarefa (\d+) concluída', text, re.IGNORECASE)
-                    if match:
-                        task_number = int(match.group(1))
-                        if 1 <= task_number <= len(tasks):
-                            task_item = tasks[task_number -1]
-                            # Update the status of the task
-                            conn.execute(
-                                "UPDATE maintenance_task_items SET status = ? WHERE id = ?",
-                                ('concluída', task_item['id'])
-                            )
-                            conn.commit()
-                            # Send a confirmation message to the driver
-                            response_message = f"Tarefa {task_number} marcada como concluída."
-                            # Send message via Telegram
-                            conversation_service.send_message(response_message, chat_id)
+            
+            if state_row:
+                user_state = state_row['state']
+            else:
+                user_state = STATE_INITIAL
 
-                            # Verificar se todas as tarefas foram concluídas
-                            todas_concluidas = conn.execute(
-                                "SELECT COUNT(*) FROM maintenance_task_items WHERE maintenance_task_id = ? AND status = 'pendente'",
-                                (maintenance_task_id,)
-                            ).fetchone()[0] == 0
-                            if todas_concluidas:
-                                # Obter o gerente associado ao motorista
-                                gerente = conn.execute(
-                                    """
-                                    SELECT ap.id as gerente_id
-                                    FROM machine_managers mm
-                                    JOIN auxiliary_people ap ON mm.gerente_id = ap.id
-                                    JOIN machines m ON mm.machine_id = m.id
-                                    WHERE m.motorista_id = ?
-                                    """, (motorista_id,)
-                                ).fetchone()
-                                
-                                if gerente:
-                                    # Gerar e enviar o relatório para o gerente
-                                    gerente_id = gerente['gerente_id']
-                                    send_gerente_report(gerente_id)
+            # Verifica se o chat_id já está na tabela 'users'
+            user = conn.execute(
+                "SELECT * FROM users WHERE chat_id = ?",
+                (chat_id,)
+            ).fetchone()
+
+            if user:
+                print(user_state)
+                if user_state == STATE_INITIAL:
+                    response_message = "Você gostaria de adicionar uma nova pessoa auxiliar? Por favor, envie o nome da pessoa."
+                    # Inserir ou atualizar o estado no banco de dados
+                    conn.execute("""
+                        INSERT INTO conversation_states (chat_id, state)
+                        VALUES (?, ?)
+                        ON CONFLICT(chat_id) DO UPDATE SET state=excluded.state;
+                    """, (chat_id, STATE_COLLECT_NAME))
+                    conn.commit()
+                    conversation_service.send_message(response_message, chat_id)
+
+                elif user_state == STATE_COLLECT_NAME:
+                    # Armazena o nome no banco de dados
+                    conn.execute("""
+                        UPDATE conversation_states SET new_aux_name = ?, state = ?
+                        WHERE chat_id = ?;
+                    """, (text, STATE_COLLECT_EMAIL, chat_id))
+                    conn.commit()
+                    response_message = "Por favor, envie o email da pessoa."
+                    conversation_service.send_message(response_message, chat_id)
+
+                elif user_state == STATE_COLLECT_EMAIL:
+                    # Armazena o email no banco de dados
+                    conn.execute("""
+                        UPDATE conversation_states SET new_aux_email = ?, state = ?
+                        WHERE chat_id = ?;
+                    """, (text, STATE_COLLECT_PHONE, chat_id))
+                    conn.commit()
+                    response_message = "Por favor, envie o número de telefone da pessoa."
+                    conversation_service.send_message(response_message, chat_id)
+
+                elif user_state == STATE_COLLECT_PHONE:
+                    # Armazena o telefone no banco de dados
+                    conn.execute("""
+                        UPDATE conversation_states SET new_aux_phone = ?, state = ?
+                        WHERE chat_id = ?;
+                    """, (text, STATE_COLLECT_ROLE, chat_id))
+                    conn.commit()
+                    response_message = "Por favor, envie a função da pessoa (gerente ou motorista)."
+                    conversation_service.send_message(response_message, chat_id)
+
+                elif user_state == STATE_COLLECT_ROLE:
+                    if text.lower() in ['gerente', 'motorista']:
+                        # Recupera os dados armazenados
+                        state_data = conn.execute(
+                            "SELECT * FROM conversation_states WHERE chat_id = ?",
+                            (chat_id,)
+                        ).fetchone()
+                        new_aux_name = state_data['new_aux_name']
+                        new_aux_email = state_data['new_aux_email']
+                        new_aux_phone = state_data['new_aux_phone']
+                        new_aux_role = text.lower()
+
+                        # Insere a pessoa auxiliar no banco de dados
+                        conn.execute(
+                            """
+                            INSERT INTO auxiliary_people (user_id, name, email, telefone, role)
+                            VALUES (?, ?, ?, ?, ?)
+                            """, 
+                            (user['id'], new_aux_name, new_aux_email, new_aux_phone, new_aux_role)
+                        )
+                        conn.commit()
+
+                        # Remove o estado do usuário
+                        conn.execute(
+                            "DELETE FROM conversation_states WHERE chat_id = ?",
+                            (chat_id,)
+                        )
+                        conn.commit()
+
+                        response_message = f"Pessoa auxiliar '{new_aux_name}' adicionada com sucesso!"
+                        conversation_service.send_message(response_message, chat_id)
+                    else:
+                        response_message = "Função inválida. Por favor, envie 'gerente' ou 'motorista'."
+                        conversation_service.send_message(response_message, chat_id)
+                else:
+                    # Caso o estado não seja reconhecido, reinicia o processo
+                    conn.execute(
+                        "DELETE FROM conversation_states WHERE chat_id = ?",
+                        (chat_id,)
+                    )
+                    conn.commit()
+                    response_message = "Ocorreu um erro. Vamos reiniciar o processo. Por favor, envie o nome da pessoa auxiliar."
+                    conn.execute("""
+                        INSERT INTO conversation_states (chat_id, state)
+                        VALUES (?, ?)
+                        ON CONFLICT(chat_id) DO UPDATE SET state=excluded.state;
+                    """, (chat_id, STATE_COLLECT_NAME))
+                    conn.commit()
+                    conversation_service.send_message(response_message, chat_id)
+            else:
+                # Check if chat_id exists in 'auxiliary_people' table
+                motorista = conn.execute(
+                    "SELECT * FROM auxiliary_people WHERE chat_id = ?",
+                    (chat_id,)
+                ).fetchone()
+
+                if motorista:
+                    # Existing motorista flow
+                    motorista_id = motorista['id']
+                    today_date = str(datetime.now().date())
+                    maintenance_task = conn.execute(
+                        "SELECT * FROM maintenance_tasks WHERE motorista_id = ? AND date = ?",
+                        (motorista_id, today_date)
+                    ).fetchone()
+
+                    if maintenance_task:
+                        maintenance_task_id = maintenance_task['id']
+                        tasks = conn.execute(
+                            "SELECT * FROM maintenance_task_items WHERE maintenance_task_id = ?",
+                            (maintenance_task_id,)
+                        ).fetchall()
+
+                        match = re.match(r'Tarefa (\d+) concluída', text, re.IGNORECASE)
+                        if match:
+                            task_number = int(match.group(1))
+                            if 1 <= task_number <= len(tasks):
+                                task_item = tasks[task_number - 1]
+                                conn.execute(
+                                    "UPDATE maintenance_task_items SET status = ? WHERE id = ?",
+                                    ('concluída', task_item['id'])
+                                )
+                                conn.commit()
+                                response_message = f"Tarefa {task_number} marcada como concluída."
+                                conversation_service.send_message(response_message, chat_id)
+
+                                # Check if all tasks are completed
+                                todas_concluidas = conn.execute(
+                                    "SELECT COUNT(*) FROM maintenance_task_items WHERE maintenance_task_id = ? AND status = 'pendente'",
+                                    (maintenance_task_id,)
+                                ).fetchone()[0] == 0
+                                if todas_concluidas:
+                                    gerente = conn.execute(
+                                        """
+                                        SELECT ap.id as gerente_id
+                                        FROM machine_managers mm
+                                        JOIN auxiliary_people ap ON mm.gerente_id = ap.id
+                                        JOIN machines m ON mm.machine_id = m.id
+                                        WHERE m.motorista_id = ?
+                                        """, (motorista_id,)
+                                    ).fetchone()
+
+                                    if gerente:
+                                        gerente_id = gerente['gerente_id']
+                                        send_gerente_report(gerente_id)
+                            else:
+                                response_message = "Número de tarefa inválido."
+                                conversation_service.send_message(response_message, chat_id)
                         else:
-                            # Invalid task number
-                            response_message = "Número de tarefa inválido."
+                            response_message = ("Mensagem não reconhecida. Para marcar uma tarefa como concluída, "
+                                                "responda com o número da tarefa seguido de 'concluída'. "
+                                                "Por exemplo: 'Tarefa 1 concluída'")
                             conversation_service.send_message(response_message, chat_id)
                     else:
-                        # Unrecognized message
-                        response_message = "Mensagem não reconhecida. Para marcar uma tarefa como concluída, responda com o número da tarefa seguido de 'concluída'. Por exemplo: 'Tarefa 1 concluída'"
+                        response_message = "Nenhuma tarefa de manutenção atribuída para hoje."
                         conversation_service.send_message(response_message, chat_id)
-            else:
-                # Unknown driver
-                response_message = "Motorista não encontrado."
-                conversation_service.send_message(response_message, chat_id)
+                else:
+                    # Chat ID not found, handle phone number
+                    if phone_number:
+                        # Remove non-digit characters
+                        phone_number_digits = re.sub(r'\D', '', phone_number)[2:]
+                        print(phone_number_digits)
+
+                        # Check in 'user' table
+                        user_by_phone = conn.execute(
+                            "SELECT * FROM users WHERE telefone = ?",
+                            (phone_number_digits,)
+                        ).fetchone()
+
+                        if user_by_phone:
+                            conn.execute(
+                                "UPDATE users SET chat_id = ? WHERE id = ?",
+                                (chat_id, user_by_phone['id'])
+                            )
+                            conn.commit()
+                            response_message = f"Chat ID atualizado com sucesso. Bem-vindo, {user_by_phone['nome']}!"
+                            conversation_service.send_message(response_message, chat_id)
+                            # Implement additional user-specific logic here
+                        else:
+                            # Check in 'auxiliary_people' table
+                            aux_by_phone = conn.execute(
+                                "SELECT * FROM auxiliary_people WHERE telefone = ?",
+                                (phone_number_digits,)
+                            ).fetchone()
+
+                            if aux_by_phone:
+                                conn.execute(
+                                    "UPDATE auxiliary_people SET chat_id = ? WHERE id = ?",
+                                    (chat_id, aux_by_phone['id'])
+                                )
+                                conn.commit()
+                                response_message = "Chat ID atualizado com sucesso. Bem-vindo!"
+                                conversation_service.send_message(response_message, chat_id)
+                                # Implement additional motorista-specific logic here
+                            else:
+                                response_message = "Número de telefone não encontrado em nosso cadastro."
+                                conversation_service.send_message(response_message, chat_id)
+                    else:
+                        # Ask for phone number
+                        response_message = "Por favor, envie seu número de telefone para prosseguir."
+                        reply_markup = {
+                            "keyboard": [[{
+                                "text": "Enviar meu número de telefone",
+                                "request_contact": True
+                            }]],
+                            "one_time_keyboard": True,
+                            "resize_keyboard": True
+                        }
+                        conversation_service.send_message(response_message, chat_id, reply_markup=reply_markup)
     return 'OK'
+
 
 
 def generate_gerente_report(gerente_id):
@@ -1387,7 +1609,8 @@ def send_gerente_report(gerente_id):
         pdf_buffer = generate_gerente_report_pdf(gerente_id)
 
         # Envia o PDF via Telegram
-        conversation_service.send_telegram_media(chat_id, pdf_buffer)
+        conversation_service.send_telegram_message("Relatório gerado com sucesso:", chat_id)
+        conversation_service.send_telegram_media(recipient=chat_id, media=pdf_buffer, media_type='document')
         print("Relatório enviado!")
 
     return redirect(url_for("dashboard"))
@@ -1410,145 +1633,157 @@ from reportlab.platypus import (
 from datetime import datetime
 import io
 
+import os
+
 def generate_gerente_report_pdf(gerente_id):
     """
-    Gera um relatório PDF aprimorado das tarefas concluídas pelos motoristas subordinados ao gerente fornecido.
+    Gera um relatório PDF das tarefas concluídas pelos motoristas subordinados ao gerente fornecido.
+    Salva o PDF no sistema de arquivos e retorna o caminho do arquivo.
     """
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    elements = []
+    # Definir o caminho do diretório onde os relatórios serão salvos
+    pdf_directory = 'static/reports/'
+    if not os.path.exists(pdf_directory):
+        os.makedirs(pdf_directory)
 
-    # Estilos e fontes
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'Title',
-        parent=styles['Title'],
-        fontSize=24,
-        alignment=1,
-        spaceAfter=20,
-    )
-    subtitle_style = ParagraphStyle(
-        'Subtitle',
-        parent=styles['Heading2'],
-        fontSize=18,
-        textColor=colors.HexColor("#0066CC"),
-        spaceAfter=10,
-    )
-    normal_style = styles['Normal']
+    # Nome do arquivo PDF baseado no gerente_id
+    pdf_filename = f'relatorio_gerente_{gerente_id}.pdf'
+    pdf_path = os.path.join(pdf_directory, pdf_filename)
 
-    # Cabeçalho com logotipo
-    logo_path = 'static/images/logo.webp'  # Caminho para o logotipo da empresa
-    try:
-        logo = Image(logo_path, width=2 * inch, height=2 * inch)
-        logo.hAlign = 'CENTER'
-        elements.append(logo)
-    except Exception as e:
-        print(f"Erro ao carregar o logotipo: {e}")
+    # Criar o PDF em disco
+    with open(pdf_path, 'wb') as pdf_file:
+        doc = SimpleDocTemplate(pdf_file, pagesize=A4)
+        elements = []
 
-    # Título do relatório
-    today_date = datetime.now().strftime('%d/%m/%Y')
-    title = Paragraph(f"Relatório de Tarefas Concluídas ({today_date})", title_style)
-    elements.append(title)
-    elements.append(Spacer(1, 12))
+        # Estilos e fontes
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'Title',
+            parent=styles['Title'],
+            fontSize=24,
+            alignment=1,
+            spaceAfter=20,
+        )
+        subtitle_style = ParagraphStyle(
+            'Subtitle',
+            parent=styles['Heading2'],
+            fontSize=18,
+            textColor=colors.HexColor("#0066CC"),
+            spaceAfter=10,
+        )
+        normal_style = styles['Normal']
 
-    with connect_db() as conn:
-        conn.row_factory = sqlite3.Row
+        # Cabeçalho com logotipo
+        logo_path = 'static/images/logo.webp'
+        try:
+            logo = Image(logo_path, width=2 * inch, height=2 * inch)
+            logo.hAlign = 'CENTER'
+            elements.append(logo)
+        except Exception as e:
+            print(f"Erro ao carregar o logotipo: {e}")
 
-        # Obter motoristas subordinados ao gerente
-        motoristas = conn.execute('''
-            SELECT DISTINCT ap.id as motorista_id, ap.name as motorista_name
-            FROM auxiliary_people ap
-            JOIN machines m ON m.motorista_id = ap.id
-            JOIN machine_managers mm ON mm.machine_id = m.id
-            WHERE mm.gerente_id = ?
-        ''', (gerente_id,)).fetchall()
-
-        if not motoristas:
-            elements.append(Paragraph("Nenhum motorista subordinado encontrado para o gerente.", normal_style))
-            doc.build(elements)
-            buffer.seek(0)
-            return buffer
-
-        # Obter tarefas concluídas de cada motorista
-        report_data = []
-        today_iso_date = datetime.now().strftime('%Y-%m-%d')
-        total_tarefas = 0
-        for motorista in motoristas:
-            motorista_id = motorista['motorista_id']
-            motorista_name = motorista['motorista_name']
-            # Obter tarefas concluídas do motorista
-            completed_tasks = conn.execute('''
-                SELECT mti.task, mti.status
-                FROM maintenance_task_items mti
-                JOIN maintenance_tasks mt ON mti.maintenance_task_id = mt.id
-                WHERE mt.motorista_id = ? AND mt.date = ? AND mti.status = ?
-            ''', (motorista_id, today_iso_date, 'concluída')).fetchall()
-            if completed_tasks:
-                total_tarefas += len(completed_tasks)
-                report_data.append({
-                    'motorista_name': motorista_name,
-                    'tasks': completed_tasks
-                })
-
-        # Caso não existam tarefas concluídas
-        if not report_data:
-            elements.append(Paragraph("Nenhuma tarefa concluída para os motoristas subordinados ao gerente.", normal_style))
-            doc.build(elements)
-            buffer.seek(0)
-            return buffer
-
-        # Adicionar sumário
-        elements.append(Paragraph(f"Total de Motoristas: {len(report_data)}", normal_style))
-        elements.append(Paragraph(f"Total de Tarefas Concluídas: {total_tarefas}", normal_style))
+        # Título do relatório
+        today_date = datetime.now().strftime('%d/%m/%Y')
+        title = Paragraph(f"Relatório de Tarefas Concluídas ({today_date})", title_style)
+        elements.append(title)
         elements.append(Spacer(1, 12))
 
-        # Gerar o relatório formatado
-        for data in report_data:
-            elements.append(Paragraph(f"Motorista: {data['motorista_name']}", subtitle_style))
-            elements.append(Spacer(1, 6))
+        with connect_db() as conn:
+            conn.row_factory = sqlite3.Row
 
-            # Construir a tabela de tarefas concluídas
-            table_data = [["Tarefa", "Status"]]
-            for task in data['tasks']:
-                table_data.append([Paragraph(task['task'], normal_style), task['status'].capitalize()])
+            # Obter motoristas subordinados ao gerente
+            motoristas = conn.execute('''
+                SELECT DISTINCT ap.id as motorista_id, ap.name as motorista_name
+                FROM auxiliary_people ap
+                JOIN machines m ON m.motorista_id = ap.id
+                JOIN machine_managers mm ON mm.machine_id = m.id
+                WHERE mm.gerente_id = ?
+            ''', (gerente_id,)).fetchall()
 
-            table = Table(table_data, colWidths=[12 * cm, 4 * cm])
-            # Estilo da tabela
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#4F81BD")),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#DCE6F1")),
-                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey]),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ]))
-            elements.append(table)
-            elements.append(Spacer(1, 24))
+            if not motoristas:
+                elements.append(Paragraph("Nenhum motorista subordinado encontrado para o gerente.", normal_style))
+                doc.build(elements)
+                return pdf_path
 
-        # Adicionar rodapé com número de páginas
-        def add_page_number(canvas, doc):
-            page_num = canvas.getPageNumber()
-            text = f"Página {page_num}"
-            canvas.drawRightString(200 * mm, 15 * mm, text)
-        
-        # Build the PDF
-        doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
-        buffer.seek(0)
-        return buffer
+            # Obter tarefas concluídas de cada motorista
+            report_data = []
+            today_iso_date = datetime.now().strftime('%Y-%m-%d')
+            total_tarefas = 0
+            for motorista in motoristas:
+                motorista_id = motorista['motorista_id']
+                motorista_name = motorista['motorista_name']
+                completed_tasks = conn.execute('''
+                    SELECT mti.task, mti.status
+                    FROM maintenance_task_items mti
+                    JOIN maintenance_tasks mt ON mti.maintenance_task_id = mt.id
+                    WHERE mt.motorista_id = ? AND mt.date = ? AND mti.status = ?
+                ''', (motorista_id, today_iso_date, 'concluída')).fetchall()
+                if completed_tasks:
+                    total_tarefas += len(completed_tasks)
+                    report_data.append({
+                        'motorista_name': motorista_name,
+                        'tasks': completed_tasks
+                    })
+
+            # Caso não existam tarefas concluídas
+            if not report_data:
+                elements.append(Paragraph("Nenhuma tarefa concluída para os motoristas subordinados ao gerente.", normal_style))
+                doc.build(elements)
+                return pdf_path
+
+            # Adicionar sumário
+            elements.append(Paragraph(f"Total de Motoristas: {len(report_data)}", normal_style))
+            elements.append(Paragraph(f"Total de Tarefas Concluídas: {total_tarefas}", normal_style))
+            elements.append(Spacer(1, 12))
+
+            # Gerar o relatório formatado
+            for data in report_data:
+                elements.append(Paragraph(f"Motorista: {data['motorista_name']}", subtitle_style))
+                elements.append(Spacer(1, 6))
+
+                # Construir a tabela de tarefas concluídas
+                table_data = [["Tarefa", "Status"]]
+                for task in data['tasks']:
+                    table_data.append([Paragraph(task['task'], normal_style), task['status'].capitalize()])
+
+                table = Table(table_data, colWidths=[12 * cm, 4 * cm])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#4F81BD")),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#DCE6F1")),
+                    ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey]),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ]))
+                elements.append(table)
+                elements.append(Spacer(1, 24))
+
+            # Adicionar rodapé com número de páginas
+            def add_page_number(canvas, doc):
+                page_num = canvas.getPageNumber()
+                text = f"Página {page_num}"
+                canvas.drawRightString(200 * mm, 15 * mm, text)
+
+            doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
+
+    # Retornar o caminho do arquivo PDF
+    return pdf_path
+
+
+from flask import send_from_directory
 
 @app.route("/gerar_relatorio", methods=["GET", "POST"])
 def gerar_relatorio():
     """
-    Permite que o gerente gere e receba o relatório via Telegram ao clicar no botão no dashboard.
+    Allows the manager to generate and receive the report via Telegram when the button on the dashboard is clicked.
     """
     if "user_id" not in session:
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
 
-    # Verificar se o usuário é um gerente
+    # Check if the user is a manager
     with connect_db() as conn:
         gerente_info = conn.execute('''
             SELECT id, chat_id FROM auxiliary_people WHERE user_id = ? AND role = 'gerente'
@@ -1561,29 +1796,221 @@ def gerar_relatorio():
     gerente_id = gerente_info[0]
     chat_id = gerente_info[1]
 
-    # Gera o PDF em memória
-    pdf_buffer = generate_gerente_report_pdf(gerente_id)
+    # Generate the PDF report
+    pdf_path = generate_gerente_report_pdf(gerente_id)
 
-    # Envia o PDF via Telegram
-    conversation_service = ConversationService()
-    conversation_service.send_telegram_media(chat_id, pdf_buffer)
+    # Generate the report highlights
+    highlights_text = generate_report_highlights(gerente_id)
 
-    flash("Relatório enviado para o seu Telegram com sucesso!")
+    # Generate the video with the 3D animated character
+    video_path = generate_video_with_3d_character(highlights_text, gerente_id)
+
+    if not video_path:
+        flash("Erro ao gerar o vídeo com o personagem animado.")
+        return redirect(url_for("dashboard"))
+
+    # Send a message with the link to the interactive report
+    conversation_service.send_telegram_message("Relatório gerado com sucesso:", chat_id)
+    conversation_service.send_telegram_media(recipient=chat_id, media=pdf_path, media_type='document')
+    interactive_url = url_for('relatorio_interativo', gerente_id=gerente_id, _external=True)
+    message_text = f"Seu relatório está pronto! Você pode visualizar a versão interativa do relatório aqui: {interactive_url}"
+    conversation_service.send_telegram_message(message_text, chat_id)
+
+    flash("Relatório gerado com sucesso! Um link foi enviado para o seu Telegram.")
     return redirect(url_for("dashboard"))
 
 
-# Função para enviar o PDF como resposta em um endpoint Flask
-@app.route('/gerar_relatorio_pdf/<int:gerente_id>')
-def gerar_relatorio_pdf(gerente_id):
-    pdf_buffer = generate_gerente_report_pdf(gerente_id)
-    
-    response = send_file(
-        pdf_buffer,
-        as_attachment=True,
-        download_name=f"relatorio_gerente_{gerente_id}.pdf",
-        mimetype='application/pdf'
+import json
+import time
+
+import glob
+
+@app.route('/relatorio_interativo/<int:gerente_id>')
+def relatorio_interativo(gerente_id):
+    # Paths to the video and PDF report
+    video_directory = 'static/videos/'
+    video_pattern = f'report_video_{gerente_id}_*.mp4'
+    video_files = glob.glob(os.path.join(video_directory, video_pattern))
+
+    if video_files:
+        # Get the latest video file
+        latest_video_file = max(video_files, key=os.path.getctime)
+        video_url = url_for('static', filename=f'videos/{os.path.basename(latest_video_file)}')
+    else:
+        flash("O vídeo ainda não foi gerado. Por favor, gere o relatório primeiro.")
+        return redirect(url_for("dashboard"))
+
+    # Path to the PDF report
+    pdf_filename = f'reports/relatorio_gerente_{gerente_id}.pdf'
+    pdf_path = os.path.join(app.static_folder, pdf_filename)
+    if not os.path.exists(pdf_path):
+        flash("O relatório ainda não foi gerado. Por favor, gere o relatório primeiro.")
+        return redirect(url_for("dashboard"))
+
+    pdf_url = url_for('static', filename=pdf_filename)
+
+    # Get the report highlights
+    highlights_text = generate_report_highlights(gerente_id)
+
+    # Get the current year for the footer
+    current_year = datetime.now().year
+
+    # Render the template with the video, report highlights, and PDF report
+    return render_template(
+        "relatorio_interativo.html",
+        video_url=video_url,
+        highlights=highlights_text,
+        pdf_url=pdf_url,
+        current_year=current_year
     )
-    return response
+
+
+
+def generate_report_highlights(gerente_id):
+    """
+    Generate highlights from the report data for a given manager.
+    """
+    with connect_db() as conn:
+        conn.row_factory = sqlite3.Row
+
+        # Get drivers under the manager
+        drivers = conn.execute('''
+            SELECT DISTINCT ap.id as motorista_id, ap.name as motorista_name
+            FROM auxiliary_people ap
+            JOIN machines m ON m.motorista_id = ap.id
+            JOIN machine_managers mm ON mm.machine_id = m.id
+            WHERE mm.gerente_id = ?
+        ''', (gerente_id,)).fetchall()
+
+        if not drivers:
+            return "Nenhum motorista subordinado encontrado para o gerente."
+
+        # Get completed tasks for each driver
+        report_data = []
+        today_iso_date = datetime.now().strftime('%Y-%m-%d')
+        total_tasks_completed = 0
+        total_drivers_with_tasks = 0
+
+        for driver in drivers:
+            motorista_id = driver['motorista_id']
+            motorista_name = driver['motorista_name']
+
+            completed_tasks = conn.execute('''
+                SELECT mti.task, mti.status
+                FROM maintenance_task_items mti
+                JOIN maintenance_tasks mt ON mti.maintenance_task_id = mt.id
+                WHERE mt.motorista_id = ? AND mt.date = ? AND mti.status = ?
+            ''', (motorista_id, today_iso_date, 'concluída')).fetchall()
+
+            num_completed_tasks = len(completed_tasks)
+            if num_completed_tasks > 0:
+                total_tasks_completed += num_completed_tasks
+                total_drivers_with_tasks += 1
+                report_data.append({
+                    'motorista_name': motorista_name,
+                    'num_completed_tasks': num_completed_tasks
+                })
+
+        if total_tasks_completed == 0:
+            return "Nenhuma tarefa concluída para os motoristas subordinados ao gerente."
+
+        # Generate the highlights text
+        highlights = f"Hoje, {total_drivers_with_tasks} motoristas completaram um total de {total_tasks_completed} tarefas.\n"
+
+        for data in report_data:
+            highlights += f"O motorista {data['motorista_name']} completou {data['num_completed_tasks']} tarefas.\n"
+
+        return highlights
+
+
+def generate_video_with_3d_character(text, gerente_id):
+    """
+    Generate a video with a 3D animated character speaking the given text using D-ID API.
+    """
+    DID_API_KEY = os.getenv('did_api_key')
+    if not DID_API_KEY:
+        print("D-ID API key not found. Please set the DID_API_KEY environment variable.")
+        return None
+
+    # Define the endpoint and headers
+    url = 'https://api.d-id.com/talks'
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik53ek53TmV1R3ptcFZTQjNVZ0J4ZyJ9.eyJodHRwczovL2QtaWQuY29tL2ZlYXR1cmVzIjoiIiwiaHR0cHM6Ly9kLWlkLmNvbS9zdHJpcGVfcHJvZHVjdF9pZCI6IiIsImh0dHBzOi8vZC1pZC5jb20vc3RyaXBlX2N1c3RvbWVyX2lkIjoiIiwiaHR0cHM6Ly9kLWlkLmNvbS9zdHJpcGVfcHJvZHVjdF9uYW1lIjoidHJpYWwiLCJodHRwczovL2QtaWQuY29tL3N0cmlwZV9zdWJzY3JpcHRpb25faWQiOiIiLCJodHRwczovL2QtaWQuY29tL3N0cmlwZV9iaWxsaW5nX2ludGVydmFsIjoibW9udGgiLCJodHRwczovL2QtaWQuY29tL3N0cmlwZV9wbGFuX2dyb3VwIjoiZGVpZC10cmlhbCIsImh0dHBzOi8vZC1pZC5jb20vc3RyaXBlX3ByaWNlX2lkIjoiIiwiaHR0cHM6Ly9kLWlkLmNvbS9zdHJpcGVfcHJpY2VfY3JlZGl0cyI6IiIsImh0dHBzOi8vZC1pZC5jb20vY2hhdF9zdHJpcGVfc3Vic2NyaXB0aW9uX2lkIjoiIiwiaHR0cHM6Ly9kLWlkLmNvbS9jaGF0X3N0cmlwZV9wcmljZV9jcmVkaXRzIjoiIiwiaHR0cHM6Ly9kLWlkLmNvbS9jaGF0X3N0cmlwZV9wcmljZV9pZCI6IiIsImh0dHBzOi8vZC1pZC5jb20vcHJvdmlkZXIiOiJnb29nbGUtb2F1dGgyIiwiaHR0cHM6Ly9kLWlkLmNvbS9pc19uZXciOmZhbHNlLCJodHRwczovL2QtaWQuY29tL2FwaV9rZXlfbW9kaWZpZWRfYXQiOiIyMDI0LTA5LTMwVDE2OjM4OjQ0LjQ3MloiLCJodHRwczovL2QtaWQuY29tL29yZ19pZCI6IiIsImh0dHBzOi8vZC1pZC5jb20vYXBwc192aXNpdGVkIjpbIlN0dWRpbyJdLCJodHRwczovL2QtaWQuY29tL2N4X2xvZ2ljX2lkIjoiIiwiaHR0cHM6Ly9kLWlkLmNvbS9jcmVhdGlvbl90aW1lc3RhbXAiOiIyMDI0LTA5LTMwVDE2OjM3OjU1LjUzOVoiLCJodHRwczovL2QtaWQuY29tL2FwaV9nYXRld2F5X2tleV9pZCI6IjJjMGY5N2kzbDYiLCJodHRwczovL2QtaWQuY29tL3VzYWdlX2lkZW50aWZpZXJfa2V5IjoiQ0gzV1FHdkExQkRMSDJvM2dXdTQ0IiwiaHR0cHM6Ly9kLWlkLmNvbS9oYXNoX2tleSI6InNwLXJ3TWVrcVZiNGFXM21jWlAzUSIsImh0dHBzOi8vZC1pZC5jb20vcHJpbWFyeSI6dHJ1ZSwiaHR0cHM6Ly9kLWlkLmNvbS9lbWFpbCI6InBlZHJvLnNhbmNoZXMyOTExQGdtYWlsLmNvbSIsImh0dHBzOi8vZC1pZC5jb20vY291bnRyeV9jb2RlIjoiQlIiLCJodHRwczovL2QtaWQuY29tL3BheW1lbnRfcHJvdmlkZXIiOiJzdHJpcGUiLCJpc3MiOiJodHRwczovL2F1dGguZC1pZC5jb20vIiwic3ViIjoiZ29vZ2xlLW9hdXRoMnwxMTIzNzM1ODg4OTUzODc1NDMyMDMiLCJhdWQiOlsiaHR0cHM6Ly9kLWlkLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaHR0cHM6Ly9kLWlkLnVzLmF1dGgwLmNvbS91c2VyaW5mbyJdLCJpYXQiOjE3Mjc3MTUzOTAsImV4cCI6MTcyNzgwMTc5MCwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCByZWFkOmN1cnJlbnRfdXNlciB1cGRhdGU6Y3VycmVudF91c2VyX21ldGFkYXRhIG9mZmxpbmVfYWNjZXNzIiwiYXpwIjoiR3pyTkkxT3JlOUZNM0VlRFJmM20zejNUU3cwSmxSWXEifQ.AIy0YOxufpXeOV9J-WSVO-ys2KCDn_riev45fK0O2nTwnPFGB8ES5eBd8MyvfsKmApVcXaPTwf-dKqQjIYGDCyJbgP1AYiraHcR0h-I73EVPSiUU1moxkorezHszzs4lTsSqMui3HBMaTHKTfAGhbWolHGrDoKCMEuXb7gmNc_mFdC4U2VO0khZTQY0fTdi-ylDXbEeIbqNLcMdba53zIDDI1OTuF13wZD-8uWmD5QmgLyIE3URKLuMULX4siHBUQA3_3jQ4t6PsHVr4MekiPlv-pPGGBou6szFRDgbwWLI-Ovx4Hpzdc1Lk3hl0uxZnwD5RXfzteO-U5Y3snIImTA"
+    }
+
+    # Prepare the data payload
+    data = {
+        'script': {
+            'type': 'text',
+            'input': text,
+            'provider': {
+                'type': 'microsoft',
+                'voice_id': 'pt-BR-FranciscaNeural'  # Brazilian Portuguese voice
+            },
+            'ssml': False
+        },
+        'config': {
+            'fluent': True,
+            'pad_audio': 0.0,
+            'result_format': 'mp4'
+        },
+        'source_url': 'https://d-id-public-bucket.s3.us-west-2.amazonaws.com/alice.jpg',  # URL of a 3D avatar model
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code == 201:
+        # The request was successful
+        talk_id = response.json().get('id')
+        print(f'Talk created with ID: {talk_id}')
+    else:
+        print(f'Error creating talk: {response.status_code}, {response.text}')
+        return None
+
+    # Now poll for the video to be ready
+    max_attempts = 20
+    attempt = 0
+    while attempt < max_attempts:
+        attempt += 1
+        time.sleep(5)  # Wait 5 seconds before checking the status
+
+        status_response = requests.get(f'{url}/{talk_id}', headers=headers)
+        if status_response.status_code == 200:
+            status_data = status_response.json()
+            status = status_data.get('status')
+            print(f'Status: {status}')
+            if status == 'done':
+                # The video is ready
+                result_url = status_data.get('result_url')
+                if result_url:
+                    # Download the video
+                    video_directory = 'static/videos/'
+                    if not os.path.exists(video_directory):
+                        os.makedirs(video_directory)
+                    video_filename = f'report_video_{gerente_id}_{talk_id}.mp4'
+                    video_path = os.path.join(video_directory, video_filename)
+                    video_response = requests.get(result_url)
+                    with open(video_path, 'wb') as f:
+                        f.write(video_response.content)
+                    print(f'Video downloaded to {video_path}')
+                    return video_path
+                else:
+                    print('Result URL not found.')
+                    return None
+            elif status == 'error':
+                print(f'Error generating video: {status_data.get("error")}')
+                return None
+            else:
+                # Status is 'in_progress' or something else; keep waiting
+                continue
+        else:
+            print(f'Error checking status: {status_response.status_code}, {status_response.text}')
+            return None
+
+    print('Video generation timed out.')
+    return None
 
 # ==========================================
 # Main Execution
@@ -1594,3 +2021,4 @@ if __name__ == "__main__":
     start_scheduler()
     # initialize_llm()
     app.run(debug=True)
+    

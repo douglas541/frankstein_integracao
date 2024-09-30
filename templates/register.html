@@ -3,21 +3,69 @@
 {% block title %}Registrar{% endblock %}
 
 {% block content %}
-<div class="register-container container">
-    <div class="register-box">
-        <h2>Registrar</h2>
+<body class="container">
+    <h1>Registro de Usuário</h1>
+    {% if error_message %}
+        <p style="color:red;">{{ error_message }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('register') }}">
+        <label for="username">Nome de Usuário:</label><br>
+        <input type="text" name="username" required><br><br>
 
-        <!-- Exibir mensagem de erro, se houver -->
-        {% if error_message %}
-            <p class="error-message">{{ error_message }}</p>
-        {% endif %}
+        <label for="password">Senha:</label><br>
+        <input type="password" name="password" required><br><br>
 
-        <form action="/register" method="POST">
-            <input type="text" name="username" placeholder="Usuário" required>
-            <input type="password" name="password" placeholder="Senha" required>
-            <button type="submit">Registrar</button>
-        </form>
-        <a href="{{ url_for('login') }}">Já tem uma conta? Faça login</a>
-    </div>
-</div>
+        <label for="confirm_password">Confirme sua Senha:</label><br>
+        <input type="password" name="confirm_password" required><br><br>
+
+        <label for="full_name">Nome Completo:</label><br>
+        <input type="text" name="full_name" required><br><br>
+
+        <label for="email">E-mail:</label><br>
+        <input type="email" name="email" required><br><br>
+
+        <label for="telefone">Telefone Celular (com DDD):</label><br>
+        <input type="text" name="telefone" required><br><br>
+
+        <label for="estado">Estado:</label><br>
+        <select name="estado" id="estado" required>
+            <option value="">Selecione o Estado</option>
+            {% for estado in estados %}
+                <option value="{{ estado['sigla'] }}">{{ estado['nome'] }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label for="cidade">Cidade:</label><br>
+        <select name="cidade" id="cidade" required>
+            <option value="">Selecione a Cidade</option>
+        </select><br><br>
+
+        <button type="submit">Registrar</button>
+    </form>
+
+    <script>
+        // Script para carregar cidades com base no estado selecionado
+        document.getElementById('estado').addEventListener('change', function() {
+            var estadoSigla = this.value;
+            var cidadeSelect = document.getElementById('cidade');
+            cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
+
+            fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/' + estadoSigla + '/municipios')
+                .then(response => response.json())
+                .then(cidades => {
+                    cidadeSelect.innerHTML = '<option value="">Selecione a Cidade</option>';
+                    cidades.forEach(function(cidade) {
+                        var option = document.createElement('option');
+                        option.value = cidade['nome'];
+                        option.textContent = cidade['nome'];
+                        cidadeSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar cidades:', error);
+                    cidadeSelect.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+                });
+        });
+    </script>
+</body>
 {% endblock %}
