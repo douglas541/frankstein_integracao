@@ -16,7 +16,7 @@
         div.innerHTML = `
             <input type="text" name="auxiliary_name_${index}" placeholder="Nome" required>
             <input type="email" name="auxiliary_email_${index}" placeholder="Email" required>
-            <input type="tel" name="auxiliary_celular_${index}" placeholder="Celular" pattern="\\d{10,11}" required>
+            <input type="tel" name="auxiliary_telefone_${index}" placeholder="telefone" pattern="\\d{10,11}" required>
             <input type="text" name="auxiliary_chat_id_${index}" placeholder="Chat ID">
             <select name="auxiliary_role_${index}" required>
                 <option value="gerente">Gerente</option>
@@ -53,7 +53,7 @@
                     <div class="auxiliary-person">
                         <input type="text" name="auxiliary_name_{{ loop.index0 }}" value="{{ person['name'] }}" placeholder="Nome" required>
                         <input type="email" name="auxiliary_email_{{ loop.index0 }}" value="{{ person['email'] }}" placeholder="Email" required>
-                        <input type="tel" name="auxiliary_celular_{{ loop.index0 }}" value="{{ person['celular'] }}" placeholder="Celular" required>
+                        <input type="tel" name="auxiliary_telefone_{{ loop.index0 }}" value="{{ person['telefone'] }}" placeholder="Telefone" required>
                         <input type="text" name="auxiliary_chat_id_{{ loop.index0 }}" value="{{ person['chat_id'] }}" placeholder="Chat ID">
                         <select name="auxiliary_role_{{ loop.index0 }}" required>
                             <option value="gerente" {% if person['role'] == 'gerente' %}selected{% endif %}>Gerente</option>
