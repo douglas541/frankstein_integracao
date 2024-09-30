@@ -4,97 +4,8 @@
 
 {% block extra_head %}
 <!-- Adicionar FontAwesome para ícones -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-<style>
-    .table-tasks {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-
-    .table-tasks th, .table-tasks td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
-
-    .table-tasks th {
-        background-color: #f4f4f4;
-        font-weight: bold;
-    }
-
-    .table-tasks td {
-        vertical-align: middle;
-    }
-
-    .task-status {
-        text-align: center;
-        font-size: 18px;
-    }
-
-    .task-status i {
-        color: green;
-    }
-
-    .task-status.incomplete i {
-        color: red;
-    }
-
-    .task-status.completed i {
-        color: green;
-    }
-
-    .location-info, .weather-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 16px;
-    }
-
-    .news-section ul {
-        list-style: none;
-        padding: 0;
-    }
-
-    .news-item {
-        margin-bottom: 15px;
-    }
-
-    .news-item h4 {
-        font-size: 18px;
-        margin: 0;
-    }
-
-    .news-item p {
-        margin: 5px 0 0;
-        font-size: 14px;
-        color: #666;
-    }
-
-    .button-assign, .button-save {
-        padding: 10px 15px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .button-assign i, .button-save i {
-        font-size: 20px;
-    }
-
-    .button-assign:hover, .button-save:hover {
-        background-color: #0056b3;
-    }
-
-</style>
 {% endblock %}
 
 {% block content %}
@@ -151,33 +62,33 @@
 
     <!-- Seção de Tarefas de Manutenção -->
     {% if maintenance_tasks %}
-        <h2>Tarefas de Manutenção</h2>
-        <table class="table-tasks">
-            <thead>
-                <tr>
-                    <th>Motorista</th>
-                    <th>Tarefa</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for task in maintenance_tasks %}
-                <tr>
-                    <td>{{ task.motorista_name }}</td>
-                    <td>{{ task.task }}</td>
-                    <td class="task-status {% if task.status == 'concluída' %}completed{% else %}incomplete{% endif %}">
-                        {% if task.status == 'concluída' %}
-                            <i class="fas fa-check-circle"></i>
-                        {% else %}
-                            <i class="fas fa-times-circle"></i>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <h2>Tarefas de Manutenção</h2>
+    <table class="table-tasks">
+        <thead>
+            <tr>
+                <th>Motorista</th>
+                <th>Tarefa</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in maintenance_tasks %}
+            <tr>
+                <td>{{ task.motorista_name }}</td>
+                <td>{{ task.task }}</td>
+                <td class="task-status {% if task.status == 'concluída' %}completed{% else %}incomplete{% endif %}">
+                    {% if task.status == 'concluída' %}
+                    <i class="fas fa-check-circle"></i>
+                    {% else %}
+                    <i class="fas fa-times-circle"></i>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% else %}
-        <p>Nenhuma tarefa de manutenção para hoje.</p>
+    <p>Nenhuma tarefa de manutenção para hoje.</p>
     {% endif %}
 
     <!-- Botão de atribuir tarefas aos motoristas -->
