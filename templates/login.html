@@ -2,6 +2,15 @@
 
 {% block title %}Login{% endblock %}
 
+{% block extra_head %}
+<style>
+    .login-box h2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="login-container container">
     <div class="login-box">
@@ -9,7 +18,7 @@
 
         <!-- Exibir mensagem de erro, se houver -->
         {% if error_message %}
-            <p class="error-message">{{ error_message }}</p>
+        <p class="error-message">{{ error_message }}</p>
         {% endif %}
 
         <form action="/login" method="POST">
