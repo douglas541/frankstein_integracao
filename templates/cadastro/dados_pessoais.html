@@ -2,37 +2,133 @@
 
 {% block title %}Dados Pessoais{% endblock %}
 
+{% block extra_head %}
+<style>
+    .container h2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<body>
-    <h1>Dados Pessoais</h1>
-    <form method="POST" action="{{ url_for('dados_pessoais') }}">
-        <label for="full_name">Nome Completo:</label><br>
-        <input type="text" name="full_name" value="{{ full_name }}"><br><br>
 
-        <label for="endereco">Endereço:</label><br>
-        <input type="text" name="endereco" value="{{ endereco }}"><br><br>
+<main class="container">
+    <h2>Dados Pessoais</h2>
+    <form action="/dados_pessoais" method="POST" class="dados-pessoais-form">
+        <!-- Nome Completo -->
+        <div class="form-group">
+            <label for="full_name">Nome Completo</label>
+            <input type="text" id="full_name" name="full_name" placeholder="Nome Completo" value="{{ full_name }}"
+                required>
+        </div>
 
-        <label for="tamanho_fazenda">Tamanho da Fazenda (hectares):</label><br>
-        <input type="number" name="tamanho_fazenda" value="{{ tamanho_fazenda }}"><br><br>
+        <!-- Endereço -->
+        <div class="form-group">
+            <label for="endereco">Endereço</label>
+            <input type="text" id="endereco" name="endereco" placeholder="Endereço" value="{{ endereco }}"
+                required>
+        </div>
 
-        <label for="tipo_cultivo">Tipo de Cultivo:</label><br>
-        <input type="text" name="tipo_cultivo" value="{{ tipo_cultivo }}"><br><br>
+        <!-- Tamanho da Fazenda -->
+        <div class="form-group">
+            <label for="tamanho_fazenda">Tamanho da Fazenda (hectares)</label>
+            <input type="number" id="tamanho_fazenda" name="tamanho_fazenda" placeholder="Tamanho da Fazenda"
+                value="{{ tamanho_fazenda }}" min="0" step="0.1" required>
+        </div>
 
-        <label for="sistema_irrigacao">Sistema de Irrigação:</label><br>
-        <input type="text" name="sistema_irrigacao" value="{{ sistema_irrigacao }}"><br><br>
+        <!-- Tipo de Cultivo -->
+        <div class="form-group">
+            <label for="tipo_cultivo">Tipo de Cultivo</label>
+            <input type="text" id="tipo_cultivo" name="tipo_cultivo" placeholder="Tipo de Cultivo"
+                value="{{ tipo_cultivo }}" required>
+        </div>
 
-        <label for="numero_funcionarios">Número de Funcionários:</label><br>
-        <input type="number" name="numero_funcionarios" value="{{ numero_funcionarios }}"><br><br>
+        <!-- Sistema de Irrigação -->
+        <div class="form-group">
+            <label for="sistema_irrigacao">Sistema de Irrigação</label>
+            <input type="text" id="sistema_irrigacao" name="sistema_irrigacao" placeholder="Sistema de Irrigação"
+                value="{{ sistema_irrigacao }}" required>
+        </div>
 
-        <label for="historico_pesticidas">Histórico de Pesticidas:</label><br>
-        <textarea name="historico_pesticidas">{{ historico_pesticidas }}</textarea><br><br>
+        <!-- Número de Funcionários -->
+        <div class="form-group">
+            <label for="numero_funcionarios">Número de Funcionários</label>
+            <input type="number" id="numero_funcionarios" name="numero_funcionarios"
+                placeholder="Número de Funcionários" value="{{ numero_funcionarios }}" min="0" required>
+        </div>
 
-        <label for="observacoes">Observações:</label><br>
-        <textarea name="observacoes">{{ observacoes }}</textarea><br><br>
+        <!-- Histórico de Uso de Pesticidas -->
+        <div class="form-group">
+            <label for="historico_pesticidas">Histórico de Pesticidas</label>
+            <textarea id="historico_pesticidas" name="historico_pesticidas"
+                placeholder="Descreva o histórico de uso de pesticidas"
+                rows="4">{{ historico_pesticidas }}</textarea>
+        </div>
 
-        <button type="submit">Salvar</button>
+        <!-- Observações Adicionais -->
+        <div class="form-group">
+            <label for="observacoes">Observações</label>
+            <textarea id="observacoes" name="observacoes" placeholder="Observações Adicionais"
+                rows="4">{{ observacoes }}</textarea>
+        </div>
+
+        <!-- Botão Salvar -->
+        <div class="form-actions">
+            <button type="submit" class="button-save">Salvar</button>
+        </div>
     </form>
-</body>
+</main>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const estadoSelect = document.getElementById('estado');
+        const cidadeSelect = document.getElementById('cidade');
+
+        // Função para carregar estados
+        function carregarEstados() {
+            fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados')
+                .then(response => response.json())
+                .then(estados => {
+                    estados.forEach(estado => {
+                        let option = document.createElement('option');
+                        option.value = estado.sigla;
+                        option.textContent = estado.nome;
+                        estadoSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Erro ao carregar estados:', error));
+        }
+
+        // Função para carregar cidades com base no estado selecionado
+        function carregarCidades(estadoSigla) {
+            fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estadoSigla}/municipios`)
+                .then(response => response.json())
+                .then(cidades => {
+                    cidadeSelect.innerHTML = '<option value="">Selecione uma cidade</option>';
+                    cidades.forEach(cidade => {
+                        let option = document.createElement('option');
+                        option.value = cidade.nome;
+                        option.textContent = cidade.nome;
+                        cidadeSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Erro ao carregar cidades:', error));
+        }
+
+        // Carregar os estados ao carregar a página
+        carregarEstados();
+
+        // Atualizar cidades quando o estado for selecionado
+        estadoSelect.addEventListener('change', function () {
+            const estadoSigla = this.value;
+            if (estadoSigla) {
+                carregarCidades(estadoSigla);
+            } else {
+                cidadeSelect.innerHTML = '<option value="">Selecione uma cidade</option>';
+            }
+        });
+    });
+</script>
 
 {% endblock %}

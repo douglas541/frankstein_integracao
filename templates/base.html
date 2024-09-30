@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Meu Site{% endblock %}</title>
 
-    <!-- Link to external CSS -->
+    <!-- <meta name="color-scheme" content="dark" /> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.green.min.css">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     <!-- Adicionar ícones do FontAwesome para um design mais clean -->
@@ -13,32 +16,137 @@
 
     {% block extra_head %}{% endblock %}
 </head>
+
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        margin: 0;
+    }
+
+    /* O conteúdo principal deve ocupar o espaço disponível */
+    main {
+        flex: 1;
+    }
+
+    #global_nav_container {
+        width: 100%;
+        height: 4.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
+
+    #global_nav {
+        width: 90%;
+        font-size: large;
+    }
+
+    #global_nav img {
+        height: 100px;
+    }
+
+    button.danger {
+        background-color: var(--pico-danger, #dc3545); /* Define a cor de fundo como vermelho (Bootstrap 'danger' color) */
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button.danger:hover {
+        background-color: #c82333; /* Um vermelho mais escuro no hover, como o Bootstrap */
+    }
+
+    button.danger:active {
+        background-color: #bd2130; /* Cor ativa do botão ao ser clicado */
+    }
+
+    /* Estilos para o rodapé */
+    footer {
+        background-color: var(--pico-primary);
+        height: 150px;
+        color: var(--pico-primary-inverse);
+        text-align: center;
+        font-size: 0.9rem;
+        margin-top: auto;
+        border-top: 1px solid var(--pico-border-color);
+    }
+
+    footer a {
+        color: var(--pico-primary-inverse);
+        text-decoration: none;
+        margin: 0 10px;
+    }
+
+    footer a:hover {
+        text-decoration: underline;
+    }
+
+    .footer-links {
+        margin-top: 0.6rem;
+    }
+
+    .footer-links a {
+        display: inline-block;
+        font-size: 0.8rem;
+        margin: 0 15px;
+    }
+
+    .footer-copy {
+        margin-top: 0.6rem;
+        font-size: 0.6rem;
+    }
+</style>
+
 <body>
     {% if session.get('user_id') %}
     <!-- Global Navigation Menu -->
-    <div class="global-nav">
-        <nav>
+    <div id="global_nav_container">
+        <nav id="global_nav">
+            <a href="{{ url_for('index') }}">
+                <img src="{{url_for('static', filename='images/agro-logo.png')}}" alt="logo">
+            </a>
+
             <ul>
-                <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a></li>
-                <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="{{ url_for('dados_pessoais') }}"><i class="fas fa-user"></i> Dados Pessoais</a></li>
-                <li><a href="{{ url_for('list_machines') }}"><i class="fas fa-cogs"></i> Máquinas</a></li>
-                <li><a href="{{ url_for('pessoas_auxiliares') }}"><i class="fas fa-users"></i> Pessoas Auxiliares</a></li>
-                <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Configurações</a></li>
-                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('dados_pessoais') }}">Dados Pessoais</a></li>
+                <li><a href="{{ url_for('list_machines') }}">Máquinas</a></li>
+                <li><a href="{{ url_for('pessoas_auxiliares') }}">Pessoas Auxiliares</a> </li>
+                <li><a href="{{ url_for('settings') }}">Configurações</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"
+                            style="margin-right: 5px;"></i>Logout</a></li>
             </ul>
         </nav>
     </div>
     {% endif %}
 
     <!-- Main Content Area -->
-    <div class="main-content">
+    <div>
         {% block content %}
         <!-- O conteúdo específico da página será inserido aqui -->
         {% endblock %}
     </div>
 
+    <!-- Rodapé -->
+    <footer>
+        <p>© 2024 Agro Sol. Todos os direitos reservados.</p>
+        <div class="footer-links">
+            <a href="#">Sobre</a>
+            <a href="#">Política de Privacidade</a>
+            <a href="#">Contato</a>
+        </div>
+        <div class="footer-copy">
+            <p>Desenvolvido por Agro Sol.</p>
+        </div>
+    </footer>
+
     <!-- Optional Scripts -->
     {% block extra_scripts %}{% endblock %}
 </body>
+
 </html>

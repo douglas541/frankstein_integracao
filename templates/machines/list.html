@@ -1,63 +1,99 @@
 {% extends "base.html" %}
+
+{% block title %}Máquinas{% endblock %}
+
+{% block extra_head %}
+
+<style>
+    .main-container h1 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .btn-add-machine {
+        margin-bottom: 1rem;
+    }
+
+    .machine-image img {
+        width: 8rem;
+    }
+
+    .form-buttons {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-buttons a {
+        margin-top: 0.6rem;
+        margin-bottom: 0.6rem;
+    }
+</style>
+
+{% endblock %}
+
 {% block content %}
-<h1>Minhas Máquinas</h1>
+<main class="container main-container">
+    <h1>Minhas Máquinas</h1>
 
-<a href="{{ url_for('add_machine') }}" class="btn-add-machine">Adicionar Máquina</a>
+    <a href="{{ url_for('add_machine') }}" class="btn-add-machine" role="button">Adicionar Máquina</a>
 
-<table class="machine-table">
-    <thead>
-        <tr>
-            <th>Imagem</th>
-            <th>Modelo</th>
-            <th>Número de Série</th>
-            <th>Data de Compra</th>
-            <th>Motorista</th>
-            <th>Gerentes</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for machine in machines %}
-        <tr>
-            <td class="machine-image">
-                <!-- Exibir a imagem correspondente ao modelo -->
-                {% if machine['model'] in ['8260R', '8285R', '8310R', '8335R', '8360R'] %}
+    <table class="machine-table">
+        <thead>
+            <tr>
+                <th>Imagem</th>
+                <th>Modelo</th>
+                <th>Número de Série</th>
+                <th>Data de Compra</th>
+                <th>Motorista</th>
+                <th>Gerentes</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for machine in machines %}
+            <tr>
+                <td class="machine-image">
+                    <!-- Exibir a imagem correspondente ao modelo -->
+                    {% if machine['model'] in ['8260R', '8285R', '8310R', '8335R', '8360R'] %}
                     <img src="{{ url_for('static', filename='images/machine1.jpeg') }}" alt="Série R">
-                {% elif machine['model'] in ['7200J', '7215J', '7230J'] %}
+                    {% elif machine['model'] in ['7200J', '7215J', '7230J'] %}
                     <img src="{{ url_for('static', filename='images/machine2.webp') }}" alt="Série J (7200)">
-                {% elif machine['model'] in ['6155M', '6175M', '6195M'] %}
+                    {% elif machine['model'] in ['6155M', '6175M', '6195M'] %}
                     <img src="{{ url_for('static', filename='images/machine3.avif') }}" alt="Série M">
-                {% elif machine['model'] in ['6135J', '6150J', '6170J', '6190J', '6210J'] %}
+                    {% elif machine['model'] in ['6135J', '6150J', '6170J', '6190J', '6210J'] %}
                     <img src="{{ url_for('static', filename='images/machine4.avif') }}" alt="Série J (Grande)">
-                {% elif machine['model'] in ['6110J', '6125J', '6130J'] %}
+                    {% elif machine['model'] in ['6110J', '6125J', '6130J'] %}
                     <img src="{{ url_for('static', filename='images/machine5.avif') }}" alt="Série J (Pequeno)">
-                {% elif machine['model'] in ['M4040', 'M4030'] %}
+                    {% elif machine['model'] in ['M4040', 'M4030'] %}
                     <img src="{{ url_for('static', filename='images/machine6.avif') }}" alt="M4040 / M4030">
-                {% elif machine['model'] in ['4730', '4830'] %}
+                    {% elif machine['model'] in ['4730', '4830'] %}
                     <img src="{{ url_for('static', filename='images/machine7.webp') }}" alt="4730 / 4830">
-                {% else %}
+                    {% else %}
                     <img src="{{ url_for('static', filename='images/default_machine.jpg') }}" alt="Máquina Padrão">
-                {% endif %}
-            </td>
-            <td>{{ machine['model'] }}</td>
-            <td>{{ machine['serial_number'] }}</td>
-            <td>{{ machine['purchase_date'] }}</td>
-            <td>{{ machine['motorista_name'] or 'Sem motorista' }}</td>
-            <td>
-                {% if machine['id'] in gerentes_por_maquina %}
+                    {% endif %}
+                </td>
+                <td>{{ machine['model'] }}</td>
+                <td>{{ machine['serial_number'] }}</td>
+                <td>{{ machine['purchase_date'] }}</td>
+                <td>{{ machine['motorista_name'] or 'Sem motorista' }}</td>
+                <td>
+                    {% if machine['id'] in gerentes_por_maquina %}
                     {{ ', '.join(gerentes_por_maquina[machine['id']]) }}
-                {% else %}
+                    {% else %}
                     Sem gerentes
-                {% endif %}
-            </td>
-            <td>
-                <a href="{{ url_for('edit_machine', machine_id=machine['id']) }}" class="btn-action btn-edit">Editar</a>
-                <form action="{{ url_for('delete_machine', machine_id=machine['id']) }}" method="post" style="display:inline;">
-                    <button type="submit" class="btn-action btn-delete">Excluir</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                    {% endif %}
+                </td>
+                <td class="form-buttons">
+                    <a href="{{ url_for('edit_machine', machine_id=machine['id']) }}" class="btn-action btn-edit"
+                        role="button">Editar</a>
+                    <form action="{{ url_for('delete_machine', machine_id=machine['id']) }}" method="post"
+                        style="display:inline;">
+                        <button type="submit" class="btn-action btn-delete danger">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</main>
 {% endblock %}

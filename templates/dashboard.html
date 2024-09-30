@@ -4,153 +4,92 @@
 
 {% block extra_head %}
 <!-- Adicionar FontAwesome para ícones -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
 <style>
-    .table-tasks {
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-header .weather-info i {
+        margin-left: 1.2rem;
+    }
+
+    .main-content h2 {
+        margin-bottom: 2rem;
+    }
+
+    .task-buttons {
         width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-
-    .table-tasks th, .table-tasks td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
-
-    .table-tasks th {
-        background-color: #f4f4f4;
-        font-weight: bold;
-    }
-
-    .table-tasks td {
-        vertical-align: middle;
-    }
-
-    .task-status {
-        text-align: center;
-        font-size: 18px;
-    }
-
-    .task-status i {
-        color: green;
-    }
-
-    .task-status.incomplete i {
-        color: red;
-    }
-
-    .task-status.completed i {
-        color: green;
-    }
-
-    .location-info, .weather-info {
         display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 16px;
+        justify-content: space-between;
     }
 
-    .news-section ul {
-        list-style: none;
-        padding: 0;
+    .task-buttons form {
+        width: 49%;
     }
-
-    .news-item {
-        margin-bottom: 15px;
-    }
-
-    .news-item h4 {
-        font-size: 18px;
-        margin: 0;
-    }
-
-    .news-item p {
-        margin: 5px 0 0;
-        font-size: 14px;
-        color: #666;
-    }
-
-    .button-assign, .button-save {
-        padding: 10px 15px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .button-assign i, .button-save i {
-        font-size: 20px;
-    }
-
-    .button-assign:hover, .button-save:hover {
-        background-color: #0056b3;
-    }
-
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-header">
-    <!-- Localização no canto esquerdo -->
-    {% if cidade and estado %}
-    <div class="location-info">
-        <i class="fas fa-map-marker-alt"></i>
-        <span>{{ cidade }}, {{ estado }}</span>
-    </div>
-    {% else %}
-    <div class="location-info">
-        <i class="fas fa-map-marker-alt"></i>
-        <span>Cadastre sua localização!</span>
-    </div>
-    {% endif %}
-
-    <!-- Clima no canto direito -->
-    {% if weather %}
-    <div class="weather-info">
-        <i class="fas fa-thermometer-half"></i>
-        <span>{{ weather.temperature }} °C</span>
-        <i class="fas fa-cloud"></i>
-        <span>{{ weather.description }}</span>
-    </div>
-    {% else %}
-    <div class="weather-info">
-        <p class="error-message">Clima indisponível</p>
-    </div>
-    {% endif %}
-</div>
-
-<div class="main-content">
-    <h2>Bem-vindo, {{ username }}!</h2>
-
-    <!-- Seção de Notícias -->
-    <h3>Notícias Agro da Região</h3>
-    <div class="news-section">
-        {% if noticias %}
-        <ul class="news-list">
-            {% for noticia in noticias %}
-            <li class="news-item">
-                <a href="{{ noticia.url }}" target="_blank">
-                    <h4>{{ noticia.title }}</h4>
-                    <p>{{ noticia.description }}</p>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+<main id="dash-main">
+    <div class="dashboard-header container">
+        <!-- Localização no canto esquerdo -->
+        {% if cidade and estado %}
+        <div class="location-info">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ cidade }}, {{ estado }}</span>
+        </div>
         {% else %}
-        <p>Não há notícias disponíveis no momento.</p>
+        <div class="location-info">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Cadastre sua localização!</span>
+        </div>
+        {% endif %}
+
+        <!-- Clima no canto direito -->
+        {% if weather %}
+        <div class="weather-info">
+            <i class="fas fa-thermometer-half"></i>
+            <span>{{ weather.temperature }} °C</span>
+            <i class="fas fa-cloud"></i>
+            <span>{{ weather.description }}</span>
+        </div>
+        {% else %}
+        <div class="weather-info">
+            <p class="error-message">Clima indisponível</p>
+        </div>
         {% endif %}
     </div>
 
-    <!-- Seção de Tarefas de Manutenção -->
-    {% if maintenance_tasks %}
+    <div class="main-content container">
+        <h2>Bem-vindo, {{ username }}!</h2>
+
+        <!-- Seção de Notícias -->
+        <h3>Notícias Agro da Região</h3>
+        <div class="news-section">
+            {% if noticias %}
+            <ul class="news-list">
+                {% for noticia in noticias %}
+                <li class="news-item">
+                    <a href="{{ noticia.url }}" target="_blank">
+                        <h4>{{ noticia.title }}</h4>
+                        <p>{{ noticia.description }}</p>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>Não há notícias disponíveis no momento.</p>
+            {% endif %}
+        </div>
+
+        <!-- Seção de Tarefas de Manutenção -->
+        {% if maintenance_tasks %}
         <h2>Tarefas de Manutenção</h2>
         <table class="table-tasks">
             <thead>
@@ -167,33 +106,33 @@
                     <td>{{ task.task }}</td>
                     <td class="task-status {% if task.status == 'concluída' %}completed{% else %}incomplete{% endif %}">
                         {% if task.status == 'concluída' %}
-                            <i class="fas fa-check-circle"></i>
+                        <i class="fas fa-check-circle"></i>
                         {% else %}
-                            <i class="fas fa-times-circle"></i>
+                        <i class="fas fa-times-circle"></i>
                         {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
+        {% else %}
         <p>Nenhuma tarefa de manutenção para hoje.</p>
-    {% endif %}
+        {% endif %}
 
-    <!-- Botão de atribuir tarefas aos motoristas -->
-    <div class="assign-tasks-section">
-        <form method="POST" action="{{ url_for('assign_tasks') }}">
-            <button type="submit" class="button-assign">
-                <i class="fas fa-tasks"></i> Atribuir Tarefas aos Motoristas
-            </button>
-        </form>
+        <div class="task-buttons">
+            <!-- Botão de atribuir tarefas aos motoristas -->
+            <form method="POST" action="{{ url_for('assign_tasks') }}">
+                <button type="submit" class="button-assign">
+                    <i class="fas fa-tasks"></i> Atribuir Tarefas aos Motoristas
+                </button>
+            </form>
+
+            <!-- Exemplo de código HTML para o botão -->
+            <form action="{{ url_for('gerar_relatorio') }}" method="post">
+                <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+            </form>
+        </div>
+
     </div>
-
-    <!-- Exemplo de código HTML para o botão -->
-    <form action="{{ url_for('gerar_relatorio') }}" method="post">
-        <button type="submit" class="btn btn-primary">Gerar Relatório</button>
-    </form>
-
-
-</div>
+</main>
 {% endblock %}

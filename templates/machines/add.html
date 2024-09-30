@@ -1,65 +1,71 @@
 {% extends "base.html" %}
 
-{% block content %}
-<h1>Adicionar Máquina</h1>
+{% block extra_head %}
 
-<form method="post" class="form-add-machine">
-    <div class="form-group">
-        <label for="model">Modelo:</label>
-        <select name="model" id="model" required>
-            <option value="">-- Selecione o Modelo --</option>
-            {% for series, models in machine_models.items() %}
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <h1>Adicionar Máquina</h1>
+
+    <form method="post" class="form-add-machine">
+        <div class="form-group">
+            <label for="model">Modelo:</label>
+            <select name="model" id="model" required>
+                <option value="">-- Selecione o Modelo --</option>
+                {% for series, models in machine_models.items() %}
                 <optgroup label="{{ series }}">
                     {% for model in models %}
-                        <option value="{{ model }}">{{ model }}</option>
+                    <option value="{{ model }}">{{ model }}</option>
                     {% endfor %}
                 </optgroup>
-            {% endfor %}
-        </select>
-    </div>
+                {% endfor %}
+            </select>
+        </div>
 
-    <!-- Campo Número de Série -->
-    <div class="form-group">
-        <label for="serial_number">Número de Série:</label>
-        <input type="text" id="serial_number" name="serial_number" placeholder="Digite o número de série">
-    </div>
+        <!-- Campo Número de Série -->
+        <div class="form-group">
+            <label for="serial_number">Número de Série:</label>
+            <input type="text" id="serial_number" name="serial_number" placeholder="Digite o número de série">
+        </div>
 
-    <!-- Campo Data de Compra -->
-    <div class="form-group">
-        <label for="purchase_date">Data de Compra:</label>
-        <input type="date" id="purchase_date" name="purchase_date">
-    </div>
+        <!-- Campo Data de Compra -->
+        <div class="form-group">
+            <label for="purchase_date">Data de Compra:</label>
+            <input type="date" id="purchase_date" name="purchase_date">
+        </div>
 
-    <!-- Campo Detalhes -->
-    <div class="form-group">
-        <label for="other_details">Detalhes:</label>
-        <textarea id="other_details" name="other_details" placeholder="Descreva outros detalhes"></textarea>
-    </div>
+        <!-- Campo Detalhes -->
+        <div class="form-group">
+            <label for="other_details">Detalhes:</label>
+            <textarea id="other_details" name="other_details" placeholder="Descreva outros detalhes"></textarea>
+        </div>
 
-    <!-- Campo Motorista -->
-    <div class="form-group">
-        <label for="motorista_id">Motorista:</label>
-        <select name="motorista_id" id="motorista_id">
-            <option value="">-- Selecione o Motorista --</option>
-            {% for motorista in auxiliaries.motoristas %}
+        <!-- Campo Motorista -->
+        <div class="form-group">
+            <label for="motorista_id">Motorista:</label>
+            <select name="motorista_id" id="motorista_id">
+                <option value="">-- Selecione o Motorista --</option>
+                {% for motorista in auxiliaries.motoristas %}
                 <option value="{{ motorista.id }}">{{ motorista.name }}</option>
-            {% endfor %}
-        </select>
-    </div>
+                {% endfor %}
+            </select>
+        </div>
 
-    <!-- Campo Gerentes -->
-    <div class="form-group">
-        <label for="gerente_ids">Gerentes:</label>
-        <select name="gerente_ids" id="gerente_ids" multiple>
-            {% for gerente in auxiliaries.gerentes %}
+        <!-- Campo Gerentes -->
+        <div class="form-group">
+            <label for="gerente_ids">Gerentes:</label>
+            <select name="gerente_ids" id="gerente_ids" multiple>
+                {% for gerente in auxiliaries.gerentes %}
                 <option value="{{ gerente.id }}">{{ gerente.name }}</option>
-            {% endfor %}
-        </select>
-    </div>
+                {% endfor %}
+            </select>
+        </div>
 
-    <!-- Botão Salvar -->
-    <div class="form-actions">
-        <button type="submit" class="btn-save">Salvar</button>
-    </div>
-</form>
+        <!-- Botão Salvar -->
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Salvar</button>
+        </div>
+    </form>
+</main>
 {% endblock %}

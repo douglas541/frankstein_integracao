@@ -2,17 +2,54 @@
 
 {% block title %}Sol - Transforme sua Operação Agrícola{% endblock %}
 
+{% block extra_head %}
+<style>
+    .card {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 50px;
+        background: linear-gradient(to left, rgba(255, 255, 255, 0) 20%, rgb(19, 31, 7) 80%),
+        url("{{ url_for('static', filename='images/colheitadeira.jpg') }}");
+        background-position: right center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        height: 70vh;
+        width: 100%;
+    }
+
+    .card-content {
+        max-width: 40%;
+    }
+
+    .card-content h1 {
+        margin-bottom: 20px;
+        color: var(--pico-primary-inverse);
+    }
+
+    .card-content p {
+        color: var(--pico-primary-inverse);
+        margin-bottom: 0;
+    }
+
+    .main-content {
+        margin-top: 2.4rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="dashboard-header">
-    <h1>Transforme sua operação agrícola com mais eficiência e melhores resultados</h1>
+<div class="dashboard-header card">
+    <div class="card-content">
+        <h1>Transforme sua operação agrícola com mais eficiência e melhores resultados</h1>
+        <p>Na Sol, acreditamos que quanto mais conseguimos enxergar da sua operação, mais valor podemos entregar.
+            Utilizando dados em tempo real, ajudamos a aumentar seu <em>ROI</em> e reduzir o uso de recursos por
+            hectare. Nossa inteligência auxilia sua equipe a tomar decisões mais precisas, resultando em uma operação
+            agrícola mais eficiente e financeiramente sólida.</p>
+    </div>
 </div>
 
-<div class="main-content">
-    <p>Na Sol, acreditamos que quanto mais conseguimos enxergar da sua operação, mais valor podemos entregar. Utilizando
-        dados em tempo real, ajudamos a aumentar seu <em>ROI</em> e reduzir o uso de recursos por hectare. Nossa
-        inteligência auxilia sua equipe a tomar decisões mais precisas, resultando em uma operação agrícola mais
-        eficiente e financeiramente sólida.</p>
-
+<div  class="main-content container">
     <h2>Nossa proposta para sua fazenda:</h2>
     <ul>
         <li>Aumente sua eficiência operacional</li>

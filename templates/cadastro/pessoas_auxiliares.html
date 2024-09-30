@@ -14,15 +14,15 @@
         let div = document.createElement('div');
         div.className = 'auxiliary-person';
         div.innerHTML = `
-            <input type="text" name="auxiliary_name_${index}" placeholder="Nome" required>
-            <input type="email" name="auxiliary_email_${index}" placeholder="Email" required>
-            <input type="tel" name="auxiliary_telefone_${index}" placeholder="telefone" pattern="\\d{10,11}" required>
-            <input type="text" name="auxiliary_chat_id_${index}" placeholder="Chat ID">
-            <select name="auxiliary_role_${index}" required>
+            <div class="column"><input type="text" name="auxiliary_name_${index}" placeholder="Nome" required>
+            <input type="email" name="auxiliary_email_${index}" placeholder="Email" required></div>
+            <div class="column"><input type="tel" name="auxiliary_telefone_${index}" placeholder="Telefone" pattern="\\d{10,11}" required>
+            <input type="text" name="auxiliary_chat_id_${index}" placeholder="Chat ID"></div>
+            <div class="dropdown-column"><select name="auxiliary_role_${index}" required>
                 <option value="gerente">Gerente</option>
                 <option value="motorista">Motorista</option>
             </select>
-            <button type="button" class="btn-remove" onclick="removeAuxiliaryPerson(this)">Remover</button>
+            <button type="button" class="btn-remove" onclick="removeAuxiliaryPerson(this)">Remover</button></div>
         `;
         divBlock.appendChild(div);
         container.appendChild(divBlock);
@@ -33,43 +33,99 @@
         divBlock.remove();
     }
 </script>
+
+<style>
+    .auxiliary-people-container h2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .auxiliary-person .column {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .auxiliary-person .column input {
+        width: 49%;
+    }
+
+    .auxiliary-person .dropdown-column {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .auxiliary-person .dropdown-column select {
+        margin-right: 20px;
+    }
+
+    .auxiliary-person-block {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #ccc;
+        /* Adiciona a linha divisória */
+    }
+
+    .add-button-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="auxiliary-people-container">
-    <h2>Pessoas Auxiliares</h2>
-    {% if success_message %}
+<main class="container">
+    <div class="auxiliary-people-container">
+        <h2>Pessoas Auxiliares</h2>
+        {% if success_message %}
         <p class="success-message">{{ success_message }}</p>
-    {% endif %}
-    {% if error_message %}
+        {% endif %}
+        {% if error_message %}
         <p class="error-message">{{ error_message }}</p>
-    {% endif %}
+        {% endif %}
 
-    <form action="/pessoas_auxiliares" method="POST">
-        <div id="auxiliary-people-container">
-            <!-- Pessoas auxiliares já cadastradas -->
-            {% for person in auxiliaries %}
+        <form action="/pessoas_auxiliares" method="POST">
+            <div id="auxiliary-people-container">
+                <!-- Pessoas auxiliares já cadastradas -->
+                {% for person in auxiliaries %}
                 <div class="auxiliary-person-block">
                     <div class="auxiliary-person">
-                        <input type="text" name="auxiliary_name_{{ loop.index0 }}" value="{{ person['name'] }}" placeholder="Nome" required>
-                        <input type="email" name="auxiliary_email_{{ loop.index0 }}" value="{{ person['email'] }}" placeholder="Email" required>
-                        <input type="tel" name="auxiliary_telefone_{{ loop.index0 }}" value="{{ person['telefone'] }}" placeholder="Telefone" required>
-                        <input type="text" name="auxiliary_chat_id_{{ loop.index0 }}" value="{{ person['chat_id'] }}" placeholder="Chat ID">
-                        <select name="auxiliary_role_{{ loop.index0 }}" required>
-                            <option value="gerente" {% if person['role'] == 'gerente' %}selected{% endif %}>Gerente</option>
-                            <option value="motorista" {% if person['role'] == 'motorista' %}selected{% endif %}>Motorista</option>
-                        </select>
-                        <button type="button" class="btn-remove" onclick="removeAuxiliaryPerson(this)">Remover</button>
+                        <div class="column">
+                            <input type="text" name="auxiliary_name_{{ loop.index0 }}" value="{{ person['name'] }}"
+                                placeholder="Nome" required>
+                            <input type="email" name="auxiliary_email_{{ loop.index0 }}" value="{{ person['email'] }}"
+                                placeholder="Email" required>
+                        </div>
+                        <div class="column">
+                            <input type="tel" name="auxiliary_telefone_{{ loop.index0 }}" value="{{ person['telefone'] }}"
+                                placeholder="Telefone" required>
+                            <input type="text" name="auxiliary_chat_id_{{ loop.index0 }}"
+                                value="{{ person['chat_id'] }}" placeholder="Chat ID">
+                        </div>
+                        <div class="dropdown-column">
+                            <select name="auxiliary_role_{{ loop.index0 }}" required>
+                                <option value="gerente" {% if person['role']=='gerente' %}selected{% endif %}>Gerente
+                                </option>
+                                <option value="motorista" {% if person['role']=='motorista' %}selected{% endif %}>
+                                    Motorista
+                                </option>
+                            </select>
+                            <button type="button" class="btn-remove danger"
+                                onclick="removeAuxiliaryPerson(this)">Remover</button>
+                        </div>
+
                     </div>
                 </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
 
-        <!-- Botão para adicionar pessoa -->
-        <button type="button" class="btn-add-person" onclick="addAuxiliaryPerson()">Adicionar Pessoa Auxiliar</button>
+            <div class="add-button-wrapper">
+                <button type="button" class="btn-add-person" onclick="addAuxiliaryPerson()">Adicionar Pessoa
+                    Auxiliar</button>
+            </div>
 
-        <!-- Botão salvar -->
-        <button type="submit" class="button-save">Salvar</button>
-    </form>
-</div>
+            <button type="submit" class="button-save">Salvar</button>
+        </form>
+    </div>
+</main>
 {% endblock %}
