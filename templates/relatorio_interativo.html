@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Interativo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(120deg, #004080, #0080ff);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: rgba(0, 64, 128, 0.8);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #content {
+            display: flex;
+            flex-direction: column;
+            margin: 20px;
+        }
+
+        #highlighted-content {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        #highlighted-content:hover {
+            transform: translateY(-10px);
+        }
+
+        #highlighted-content h1 {
+            color: #004080;
+        }
+
+        #pdf-section {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            height: 600px;
+            overflow: auto;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #pdf-section h2 {
+            color: #004080;
+        }
+
+        #pdf-section embed {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+
+        /* Keyframe animation for gradient background */
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating effect for the video */
+        @keyframes floatVideo {
+            0% { transform: translateY(0px) scale(1); opacity: 1; }
+            50% { transform: translateY(-20px) scale(1.1); opacity: 0.9; }
+            100% { transform: translateY(0px) scale(1); opacity: 1; }
+        }
+
+        /* Video container */
+        #video-container {
+            position: fixed;
+            bottom: 50px;
+            right: 50px;
+            width: 320px;
+            height: 240px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            animation: floatVideo 6s ease-in-out infinite;
+            z-index: 1000;
+            transition: transform 0.5s ease;
+        }
+
+        #video-container:hover {
+            transform: scale(1.2);
+        }
+
+        #video-container video {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+        }
+
+        footer {
+            background-color: rgba(0, 64, 128, 0.8);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Relatório Interativo</h1>
+    </header>
+
+    <div id="content">
+        <!-- Display the highlighted sections -->
+        <div id="highlighted-content">
+            <h1>Destaques do Relatório</h1>
+            <p>{{ highlights }}</p>
+        </div>
+
+        <!-- Embed the PDF report directly within the page -->
+        <div id="pdf-section">
+            <h2>Relatório Completo</h2>
+            <embed src="{{ pdf_url }}" type="application/pdf">
+        </div>
+    </div>
+
+    <!-- Video player -->
+    <div id="video-container">
+        <video controls autoplay>
+            <source src="{{ video_url }}" type="video/mp4">
+            Seu navegador não suporta o elemento de vídeo.
+        </video>
+    </div>
+
+    <footer>
+        &copy; {{ current_year }} SOL
+    </footer>
+</body>
+</html>
