@@ -2,11 +2,33 @@
 
 {% block title %}Registrar{% endblock %}
 
+{% block extra_head %}
+<style>
+    .register-box h2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .register-box form {
+        margin-bottom: 2rem;
+    }
+
+    .register-box form label {
+        margin-bottom: 0;
+    }
+
+    .register-box form input {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<body class="container">
-    <h1>Registro de Usuário</h1>
+
+<div class="register-box container">
+    <h2>Registro de Usuário</h2>
     {% if error_message %}
-        <p style="color:red;">{{ error_message }}</p>
+    <p style="color:red;">{{ error_message }}</p>
     {% endif %}
     <form method="POST" action="{{ url_for('register') }}">
         <label for="username">Nome de Usuário:</label><br>
@@ -31,7 +53,7 @@
         <select name="estado" id="estado" required>
             <option value="">Selecione o Estado</option>
             {% for estado in estados %}
-                <option value="{{ estado['sigla'] }}">{{ estado['nome'] }}</option>
+            <option value="{{ estado['sigla'] }}">{{ estado['nome'] }}</option>
             {% endfor %}
         </select><br><br>
 
@@ -45,7 +67,7 @@
 
     <script>
         // Script para carregar cidades com base no estado selecionado
-        document.getElementById('estado').addEventListener('change', function() {
+        document.getElementById('estado').addEventListener('change', function () {
             var estadoSigla = this.value;
             var cidadeSelect = document.getElementById('cidade');
             cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
@@ -54,7 +76,7 @@
                 .then(response => response.json())
                 .then(cidades => {
                     cidadeSelect.innerHTML = '<option value="">Selecione a Cidade</option>';
-                    cidades.forEach(function(cidade) {
+                    cidades.forEach(function (cidade) {
                         var option = document.createElement('option');
                         option.value = cidade['nome'];
                         option.textContent = cidade['nome'];
@@ -67,5 +89,6 @@
                 });
         });
     </script>
-</body>
+</div>
+
 {% endblock %}

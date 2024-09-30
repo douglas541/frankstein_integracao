@@ -49,7 +49,8 @@
     }
 
     button.danger {
-        background-color: var(--pico-danger, #dc3545); /* Define a cor de fundo como vermelho (Bootstrap 'danger' color) */
+        background-color: var(--pico-danger, #dc3545);
+        /* Define a cor de fundo como vermelho (Bootstrap 'danger' color) */
         color: white;
         border: none;
         padding: 0.6rem 1.2rem;
@@ -58,17 +59,20 @@
     }
 
     button.danger:hover {
-        background-color: #c82333; /* Um vermelho mais escuro no hover, como o Bootstrap */
+        background-color: #c82333;
+        /* Um vermelho mais escuro no hover */
     }
 
     button.danger:active {
-        background-color: #bd2130; /* Cor ativa do botão ao ser clicado */
+        background-color: #bd2130;
+        /* Cor ativa do botão ao ser clicado */
     }
 
     /* Estilos para o rodapé */
     footer {
         background-color: var(--pico-primary);
         height: 150px;
+        width: 100%;
         color: var(--pico-primary-inverse);
         text-align: center;
         font-size: 0.9rem;
@@ -103,8 +107,7 @@
 </style>
 
 <body>
-    {% if session.get('user_id') %}
-    <!-- Global Navigation Menu -->
+    <!-- Global Navigation Menu (Visível sempre) -->
     <div id="global_nav_container">
         <nav id="global_nav">
             <a href="{{ url_for('index') }}">
@@ -123,7 +126,6 @@
             </ul>
         </nav>
     </div>
-    {% endif %}
 
     <!-- Main Content Area -->
     <div>
@@ -132,7 +134,7 @@
         {% endblock %}
     </div>
 
-    <!-- Rodapé -->
+    <!-- Rodapé (Visível sempre) -->
     <footer>
         <p>© 2024 Agro Sol. Todos os direitos reservados.</p>
         <div class="footer-links">
