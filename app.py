@@ -316,10 +316,10 @@ MACHINE_MODELS = {
     "R Series": ["8260R", "8285R", "8310R", "8335R", "8360R"],
     "J Series 7200": ["7200J", "7215J", "7230J"],
     "M Series": ["6155M", "6175M", "6195M"],
-    "J Series 6135": ["6135J", "6150J", "6170J", "6190J", "6210J"],
-    "J Series 6110": ["6110J", "6125J", "6130J"],
-    "M Series 4040": ["M4040", "M4030"],
-    "Series 4730/4830": ["4730", "4830"],
+    #"J Series 6135": ["6135J", "6150J", "6170J", "6190J", "6210J"],
+    #"J Series 6110": ["6110J", "6125J", "6130J"],
+    #"M Series 4040": ["M4040", "M4030"],
+    #"Series 4730/4830": ["4730", "4830"],
 }
 
 def infer_series_from_model(model):
@@ -335,10 +335,13 @@ def infer_series_from_model(model):
 # Maintenance Task Generation and Assignment
 # ==========================================
 
+import json
+from datetime import datetime
+
+import ast
+from datetime import datetime
+
 def generate_maintenance_tasks():
-    """
-    Generate daily maintenance tasks for each unique combination of machine model and location.
-    """
     today_date = str(datetime.now().date())
     with connect_db() as conn:
         existing_tasks = conn.execute('''
@@ -347,9 +350,8 @@ def generate_maintenance_tasks():
 
     if existing_tasks:
         print("As tarefas de manutenção já foram geradas para hoje.")
-        return  # Do not proceed if tasks already exist for today
+        return
 
-    # Get all unique combinations of machine model and location (city, state)
     with connect_db() as conn:
         combinations = conn.execute('''
             SELECT DISTINCT m.model, u.cidade, u.estado
@@ -357,75 +359,67 @@ def generate_maintenance_tasks():
             JOIN users u ON m.user_id = u.id
         ''').fetchall()
 
-    # Map of machine series to their manuals
     machine_series_manuals = {
         'R Series': 'manualOperador_7200J_7215J_7230J.pdf',
         'J Series 7200': 'manualOperador_7200J_7215J_7230J.pdf',
         'M Series': 'manualOperador_7200J_7215J_7230J.pdf',
-        # Add other manuals as necessary
     }
 
-    # Generate maintenance tasks for each unique combination
     for combo in combinations:
-        model = combo[0]
-        cidade = combo[1]
-        estado = combo[2]
+        model, cidade, estado = combo
+        print(model, cidade, estado)
 
-        # Infer machine series from model
         series = infer_series_from_model(model)
 
-        # Check if machine series has a corresponding manual
         if series in machine_series_manuals:
             manual = machine_series_manuals[series]
 
-            # Generate tasks based on the manual
             try:
                 llm = get_llm()
                 document_names = [manual]
                 llm.create_qa_session(document_names)
 
-                # Get latitude and longitude
                 lat, lon = get_lat_lon(cidade, estado)
-                weather = None
                 description = "Informações climáticas indisponíveis"
                 temperature = "N/A"
 
                 if lat and lon:
                     weather = get_weather(lat, lon)
+                    if weather:
+                        description = weather.get("description", "não disponível")
+                        temperature = weather.get("temperature", "não disponível")
 
-                if weather:
-                    description = weather.get("description", "não disponível")
-                    temperature = weather.get("temperature", "não disponível")
-
-                # Prompt for the AI model
                 prompt = f"""
-                    Com base nas informações a seguir, gere uma lista de tarefas de manutenção preventiva que devem ser realizadas hoje:
-
-                    - Condições climáticas: {description} com temperatura de {temperature}°C
-
-                    Analise o clima e utilize apenas as informações fornecidas nos documentos para sugerir as tarefas que podem ser de manutenção ou prevenção, sem inventar informações.
-                    Seja o mais breve possível.
-
-                    Lista de tarefas:
+                -{description} com temperatura de {temperature}°C
                 """
+
                 response = llm.qa.invoke(prompt)["result"]
-                maintenance_tasks = eval(response.strip())
-                if not isinstance(maintenance_tasks, list):
-                    print(maintenance_tasks)
-                    maintenance_tasks = ["Erro ao gerar lista de tarefas."]
+                print("Resposta do modelo:", response)
+
+                try:
+                    maintenance_tasks = ast.literal_eval(response.strip())
+                    if not isinstance(maintenance_tasks, list):
+                        maintenance_tasks = None
+                        print("A resposta não é uma lista válida.")
+                except Exception as e:
+                    maintenance_tasks = None
+                    print(f"Erro ao avaliar a resposta: {e}")
+
             except Exception as e:
-                maintenance_tasks = ["Erro ao gerar tarefas de manutenção."]
+                maintenance_tasks = None
                 print(f"Erro ao gerar tarefas para o modelo {model}: {e}")
 
-            # Store the checklist in the database, associated with model, city, state
-            with connect_db() as conn:
-                conn.execute('''
-                    INSERT INTO maintenance_task_templates (model, cidade, estado, date, tasks)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (model, cidade, estado, today_date, str(maintenance_tasks)))
-                conn.commit()
+            if maintenance_tasks is not None:
+                with connect_db() as conn:
+                    conn.execute('''
+                        INSERT INTO maintenance_task_templates (model, cidade, estado, date, tasks)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (model, cidade, estado, today_date, str(maintenance_tasks)))
+                    conn.commit()
 
     print("Tarefas de manutenção geradas com sucesso.")
+
+
 
 def assign_tasks_to_motoristas():
     """

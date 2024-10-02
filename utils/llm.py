@@ -4,7 +4,6 @@ from langchain_community.vectorstores import Chroma
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_together import Together, TogetherEmbeddings
 from operator import itemgetter
 import datetime
@@ -21,6 +20,7 @@ VECTORDB_FOLDER = os.getenv('vectordb_path')
 DOCUMENTS_FOLDER = os.getenv('documents_path')
 SENTENCE_EMBEDDING_MODEL = os.getenv('sentence_embedding_model')
 TOGETHER_API_KEY = os.getenv('together_api_key')
+HF_API_KEY = os.getenv('hf_api_key')
 
 class ChatPDF:
 
@@ -116,21 +116,28 @@ class ChatPDF:
         """
         Obtem os embeddings do modelo de linguagem definido no atributo sentence_embedding_model.
         """
-        self.embeddings = HuggingFaceEmbeddings(model_name=SENTENCE_EMBEDDING_MODEL)
+        self.embeddings = TogetherEmbeddings(
+            together_api_key=self.together_api_key,
+            model=self.sentence_embedding_model,
+        )
 
     def store(self):
         """
         Armazena os chunks de todos os documentos no Vector DB, utilizando o embedding definido e inclui metadados (nome do documento).
         """
-        vectordb = Chroma.from_documents(
-            documents=self.chunks,
-            embedding=self.embeddings,
-            persist_directory=self.vectordb_folder
-        )
 
-        vectordb.persist()
-
-        self.vectordb = vectordb
+        try:
+            vectordb = Chroma.from_documents(
+                documents=self.chunks,
+                embedding=self.embeddings,
+                persist_directory=self.vectordb_folder
+            )
+            
+            self.vectordb = vectordb
+        
+        except Exception as e:
+            print(f"Erro ao armazenar os documentos: {str(e)}")
+            raise
 
     def create_llm(self):
         """
@@ -182,22 +189,22 @@ class ChatPDF:
 
         # Definição do template para o QA
         PROMPT_TEMPLATE = """
-            Você é um assistente especializado em manutenção de máquinas agrícolas. Com base nas informações fornecidas no contexto, gere uma lista de tarefas de manutenção preventiva que devem ser realizadas hoje, considerando as condições climáticas atuais.
+        Você é um assistente especializado em manutenção de máquinas agrícolas. Com base nas informações fornecidas no contexto, gere uma lista de tarefas de manutenção preventiva que devem ser realizadas hoje, considerando as condições climáticas atuais.
 
-            Instruções:
-            - Utilize apenas as informações presentes no contexto. Não adicione informações extras.
-            - Apresente as tarefas em uma lista numerada.
-            - Cada tarefa deve ser descrita em uma frase clara e concisa.
-            - Retorne a lista de tarefas no formato: ['tarefa 1', 'tarefa 2', 'tarefa 3', ...]
+        Instruções:
+        - Utilize apenas as informações presentes no contexto. Não adicione informações extras.
+        - Cada tarefa deve ser descrita em uma frase clara e concisa.
+        - **Retorne apenas a lista de tarefas no formato Python: ['tarefa 1', 'tarefa 2', 'tarefa 3', ...], sem nenhum texto adicional.**
 
-            Contexto:
-            {context}
+        Contexto:
+        {context}
 
-            Pergunta:
-            {question}
+        Condições climáticas:
+        {question}
 
-            Resposta (no formato de lista de strings):
+        Lista de Tarefas:
         """
+
 
         QA_CHAIN_PROMPT = PromptTemplate.from_template(PROMPT_TEMPLATE)
 
@@ -220,6 +227,7 @@ class ChatPDF:
             )
         else:
             # Carregar e processar os documentos
+            
             self.load()
             self.split()
             self.store()
