@@ -7,7 +7,7 @@ load_dotenv()
 
 # Obter a chave da API do Telegram e a URL do webhook
 telegram_api_key = os.getenv("telegram_api_key")
-webhook_url = "https://aaca-2804-d59-981a-d000-ed86-b44b-c601-4236.ngrok-free.app" + "/webhook"
+webhook_url = "https://7e60-2804-d59-981a-d000-d9cd-aa13-1dcc-e335.ngrok-free.app" + "/webhook"
 
 # Endpoint para definir o webhook
 set_webhook_url = f" https://api.telegram.org/bot{telegram_api_key}/setWebhook?url={webhook_url}"

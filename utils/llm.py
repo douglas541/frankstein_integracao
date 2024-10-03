@@ -1,8 +1,8 @@
 from langchain_community.document_loaders import PyMuPDFLoader, DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
+from langchain_chroma import Chroma
 
 from langchain_together import Together, TogetherEmbeddings
 from operator import itemgetter
@@ -151,7 +151,7 @@ class ChatPDF:
                         max_tokens=1024,
                     )
 
-    def create_retriever(self, k=10, filter_by_documents=None):
+    def create_retriever(self, k=5, filter_by_documents=None):
         """
         Cria um retriever de documentos com base no Vector DB já carregado, com a possibilidade de filtrar por um ou mais documentos.
 
@@ -189,11 +189,14 @@ class ChatPDF:
 
         # Definição do template para o QA
         PROMPT_TEMPLATE = """
-        Você é um assistente especializado em manutenção de máquinas agrícolas. Com base nas informações fornecidas no contexto, gere uma lista de tarefas de manutenção preventiva que devem ser realizadas hoje, considerando as condições climáticas atuais.
+        Você é um assistente especializado em manutenção de máquinas agrícolas. Com base nas informações fornecidas no contexto e considerando as condições climáticas atuais, gere uma lista de tarefas de manutenção preventiva que devem ser realizadas hoje.
 
         Instruções:
-        - Utilize apenas as informações presentes no contexto. Não adicione informações extras.
-        - Cada tarefa deve ser descrita em uma frase clara e concisa.
+        - Utilize apenas as informações presentes no contexto e documentos de referência, integrando orientações específicas de cada tarefa mencionada.
+        - Priorize as tarefas mais críticas para as condições climáticas descritas.
+        - Inclua referências a procedimentos detalhados quando disponíveis, sempre que necessário.
+        - Descreva cada tarefa em uma frase clara e concisa, e ordene por importância ou urgência.
+        - Retorne no máximo 5 tarefas.
         - **Retorne apenas a lista de tarefas no formato Python: ['tarefa 1', 'tarefa 2', 'tarefa 3', ...], sem nenhum texto adicional.**
 
         Contexto:
@@ -219,8 +222,9 @@ class ChatPDF:
 
     def start(self):
         self.get_embeddings()
-        if os.path.exists(os.path.join(self.vectordb_folder, 'index')):
-            # Carregar o banco de dados vetorial existente
+        print(os.path.join(self.vectordb_folder, 'chroma.sqlite3'))
+        if os.path.exists(os.path.join(self.vectordb_folder, 'chroma.sqlite3')):
+            print("Carregou banco de dados")
             self.vectordb = Chroma(
                 persist_directory=self.vectordb_folder,
                 embedding_function=self.embeddings
