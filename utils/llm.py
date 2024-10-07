@@ -189,24 +189,20 @@ class ChatPDF:
 
         # Definição do template para o QA
         PROMPT_TEMPLATE = """
-        Você é um assistente especializado em manutenção de máquinas agrícolas. Com base nas informações fornecidas no contexto e considerando as condições climáticas atuais, gere uma lista de tarefas de manutenção preventiva que devem ser realizadas hoje.
+            Você é um assistente especializado em manutenção de máquinas agrícolas. Baseando-se no contexto fornecido e nas condições climáticas atuais, gere uma lista de tarefas de manutenção preventiva que devem ser realizadas hoje.
 
-        Instruções:
-        - Utilize apenas as informações presentes no contexto e documentos de referência, integrando orientações específicas de cada tarefa mencionada.
-        - Priorize as tarefas mais críticas para as condições climáticas descritas.
-        - Inclua referências a procedimentos detalhados quando disponíveis, sempre que necessário.
-        - Descreva cada tarefa em uma frase clara e concisa, e ordene por importância ou urgência.
-        - Retorne no máximo 5 tarefas.
-        - **Retorne apenas a lista de tarefas no formato Python: ['tarefa 1', 'tarefa 2', 'tarefa 3', ...], sem nenhum texto adicional.**
+            Instruções:
+            - Considere apenas as informações relevantes do contexto e integre orientações específicas de cada tarefa mencionada.
+            - Cada tarefa deve ser descrita em uma única frase clara e objetiva, priorizando importância e urgência.
+            - Retorne exatamente 5 tarefas, sem adicionar qualquer explicação.
+            - O formato de retorno deve ser uma lista Python: ['tarefa 1', 'tarefa 2', 'tarefa 3', 'tarefa 4', 'tarefa 5'].
 
-        Contexto:
-        {context}
+            Dados:
+            - Contexto: {context}
+            - Condições climáticas: {question}
 
-        Condições climáticas:
-        {question}
-
-        Lista de Tarefas:
-        """
+            Lista de strings em Python:
+            """
 
 
         QA_CHAIN_PROMPT = PromptTemplate.from_template(PROMPT_TEMPLATE)

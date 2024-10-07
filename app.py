@@ -388,9 +388,18 @@ def generate_maintenance_tasks():
                     if weather:
                         description = weather.get("description", "não disponível")
                         temperature = weather.get("temperature", "não disponível")
+                
+                clima = llm.llm.invoke(f"""Reformule a descrição climática fornecida de uma forma mais explicativa e comum, usando termos encontrado em um manual como "quente e seco", "frio e úmido", etc.
 
+                            Condições climáticas:
+                            Nublado e 21.8°C 
+
+                            Resposta:
+                            """)
+    
                 prompt = f"""
-                -{description} com temperatura de {temperature}°C
+                Manutenção preventiva adequadas para o clima: {clima}.
+                Verificações para serem feitas antes de dar partida com o clima: {clima}.
                 """
 
                 response = llm.qa.invoke(prompt)["result"]
